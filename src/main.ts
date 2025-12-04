@@ -28,6 +28,8 @@ let propertyMap: L.Map | null = null;
 let currentFilters: SearchFilters = {};
 let resultsClickHandler: ((e: Event) => void) | null = null;
 let agencyClickHandler: ((e: Event) => void) | null = null;
+let currentAgency: any = null;
+let currentAgencyProperties: Property[] = [];
 
 // Initialize Three.js scene
 function init(): void {
@@ -837,6 +839,10 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
 
     if (!agencyContainer) return;
 
+    // Store current agency and properties for later use
+    currentAgency = agency;
+    currentAgencyProperties = properties;
+
     inputContainer?.classList.add('hidden');
     resultsContainer?.classList.add('hidden');
 
@@ -1426,6 +1432,29 @@ function hidePropertyDetailWithTabs(): void {
             visibility: getComputedStyle(agencyEl).visibility,
             zIndex: getComputedStyle(agencyEl).zIndex
         });
+
+        // Re-attach event listeners for property cards
+        if (agencyClickHandler) {
+            agencyContainer.removeEventListener('click', agencyClickHandler);
+        }
+
+        agencyClickHandler = (e: Event) => {
+            console.log('=== AGENCY CLICK DETECTED (after back) ===');
+            const target = e.target as HTMLElement;
+            const propertyCard = target.closest('.property-card');
+
+            if (propertyCard) {
+                console.log('Property card FOUND!');
+                const propertyId = (propertyCard as HTMLElement).dataset.propertyId;
+                const property = currentAgencyProperties.find(p => String(p.id) === String(propertyId));
+                if (property) {
+                    console.log('🚀 Opening property detail again');
+                    showPropertyDetailWithTabs(property, currentAgency);
+                }
+            }
+        };
+        agencyContainer.addEventListener('click', agencyClickHandler);
+        console.log('✅ Re-attached event listeners');
     }
 
     currentState = 'agency-detail';
