@@ -910,6 +910,7 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
     console.log('🏠 showPropertyDetailWithTabs called with:', property.id);
     const detailContainer = document.querySelector('.property-detail-container');
     const agencyContainer = document.querySelector('.agency-detail-container');
+    const resultsContainer = document.querySelector('.results-container');
 
     console.log('Detail container:', detailContainer);
     console.log('Agency container:', agencyContainer);
@@ -919,8 +920,14 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
         return;
     }
 
+    // Scroll to top first (instant, not smooth)
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
     currentState = 'property-detail';
+
+    // Hide both agency and results containers
     agencyContainer?.classList.add('hidden');
+    resultsContainer?.classList.add('hidden');
 
     const deltas = calculatePropertyDeltas(property);
 
@@ -1125,11 +1132,12 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
         });
     });
 
-    // Scroll to top when showing detail (instant, not smooth)
-    window.scrollTo({ top: 0, behavior: 'instant' });
-
     console.log('✅ Property detail with tabs should be visible now');
     console.log('   Container has class "hidden"?', detailContainer.classList.contains('hidden'));
+    console.log('   Container innerHTML length:', detailContainer.innerHTML.length);
+    console.log('   Container display:', getComputedStyle(detailContainer).display);
+    console.log('   Container visibility:', getComputedStyle(detailContainer).visibility);
+    console.log('   Container opacity:', getComputedStyle(detailContainer).opacity);
 }
 
 // Hide property detail with tabs
