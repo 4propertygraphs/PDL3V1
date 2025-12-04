@@ -1,246 +1,216 @@
-# 🗺️ Mapování schémat databází
+# Database Schema Mapping - ACTUAL STRUCTURE
 
-## 📊 Přehled databází
+## Overview
 
-### DB1: izuvblxrwtmeiywwzufp (Standardní schéma)
-```
-Tabulka: properties
-- id (uuid)
-- title (text) ← název nemovitosti
-- address (text)
-- price (numeric)
-- bedrooms (int)
-- bathrooms (int)
-- property_type (text)
-- agency_id (uuid) ← foreign key na agencies.id
+Based on runtime diagnostics, here is the **actual** structure of both databases:
 
-Tabulka: agencies
-- id (uuid)
-- name (text) ← např. "CKP"
-- address (text)
-- phone (text)
-- email (text)
-```
+---
 
-### DB2: ywmryhzpojfrmrxgggoy (Daft Scraper schéma)
+## DB1: izuvblxrwtmeiywwzufp.supabase.co
 
-**DŮLEŽITÉ**: DB2 používá dva typy tabulek:
+### Tables Found:
 
-#### 1. Dynamické tabulky: `agency_props_[název_společnosti]_[hash]`
-```
-Příklady tabulek:
-- agency_props_charlotte_owens_feefea
-- agency_props_charmaine_kelly_0ba53b
-- agency_props_casey_kennedy_estates_agents_...
-- agency_props_ckp_[hash]
+#### `agency_list`
+Columns: `agency_id`, `agency_name`, `logo_url`, `agents`, `metadata`, `created_at`, `updated_at`
 
-Struktura sloupců (různé podle tabulky):
-- id nebo unique_key
-- title nebo name
-- address nebo address1
-- price
-- bedrooms nebo house_bedrooms
-- bathrooms nebo house_bathrooms
-- property_type
-- images nebo pics
-- latitude, longitude
-- sources (jsonb) ← ['daft', 'wordpress', 'myhome']
-```
+This table contains agency information with a unique `agency_id` that can be used for linking.
 
-#### 2. Listings tabulky: `daft_listings`, `myhome_listings`, `wordpress_listings`
-```
-Struktura sloupců:
-- id nebo unique_key
-- title nebo name
-- address nebo address1
-- eircode
-- price
-- bedrooms nebo house_bedrooms
-- bathrooms nebo house_bathrooms
-- property_type
-- description
-- images nebo pics
-- latitude, longitude
-- agency_id, agency_name, agency_address
-- url (odkaz na původní inzerát)
-- last_updated nebo updated_at
-```
+#### `listings`
+Columns: (minimal/empty - needs investigation)
 
-**Jak to funguje:**
-- Při vyhledávání "CKP":
-  1. **Agency props**: Najde všechny tabulky obsahující "ckp" v názvu (např. `agency_props_casey_kennedy_*`)
-  2. **Listings**: Prohledá všechny tři listings tabulky podle obsahu (title, address, eircode, description)
-- Obě hledání probíhají **paralelně** pro rychlost
-- Výsledky ze všech tabulek se sloučí do jediného seznamu
+Purpose unclear - possibly for aggregated listings or cross-references.
 
-## 🔄 Jak aplikace mapuje sloupce
+#### `property_log`
+Columns: `log_id`, `property_id`, `source`, `action`, `details`, `logged_at`
 
-### Při hledání "CKP"
+This table logs changes to properties for audit/tracking purposes.
 
-**DB1:**
-```sql
-SELECT * FROM properties p
-LEFT JOIN agencies a ON p.agency_id = a.id
-WHERE a.name ILIKE '%CKP%'
-   OR p.title ILIKE '%CKP%'
-   OR p.address ILIKE '%CKP%'
-```
+---
 
-**DB2:**
-```sql
--- PARALELNĚ běží dvě hledání:
+## DB2: ywmryhzpojfrmrxgggoy.supabase.co
 
--- A) Agency Props:
--- Krok 1: Najdi všechny agency_props_* tabulky
--- Krok 2: Filtruj tabulky obsahující "ckp" v názvu
--- Např.: agency_props_casey_kennedy_estates_agents_abc123
+### Tables Found:
 
--- Krok 3: Pro každou nalezenou tabulku:
-SELECT * FROM agency_props_casey_kennedy_estates_agents_abc123 LIMIT 100
-SELECT * FROM agency_props_ckp_def456 LIMIT 100
+#### `properties`
+Columns: `id`, `agency_id`, `source`, `external_id`, `address`, `price`, `beds`, `baths`, `size`, `size_in_acres`, `type`, `market`, `status`, `live_status`, `agent`, `agent_name`, `pics`, `images`, `modified`, `parent_id`, `agency_name`, `created_at`, `updated_at`, `house_bathrooms`, `house_location`, `house_price`, `house_bedrooms`, `house_mt_squared`
 
--- B) Listings:
-SELECT * FROM daft_listings WHERE (title || address || description) ILIKE '%CKP%' LIMIT 100
-SELECT * FROM myhome_listings WHERE (title || address || description) ILIKE '%CKP%' LIMIT 100
-SELECT * FROM wordpress_listings WHERE (title || address || description) ILIKE '%CKP%' LIMIT 100
+**Key Fields:**
+- `agency_id` - Links to agencies table
+- `agency_name` - Text field for agency name
+- Both `beds`/`bedrooms` and `house_bedrooms` exist
+- Both `pics` and `images` exist (likely JSON arrays)
 
--- Krok 4: Sloučit všechny výsledky z A + B
-```
+#### `agencies`
+Columns: `id`, `name`, `unique_key`, `office_name`, `address`, `address1`, `address2`, `logo`, `site`, `site_name`, `acquaint_site_prefix`, **`daft_api_key`**, **`myhome_api_key`**, **`myhome_group_id`**, `fourpm_branch_id`, `ghl_id`, `whmcs_id`, `primary_source`, `total_properties`, `created_at`, `updated_at`, `stefanmars_api_token`, `stefanmars_api_key`
 
-### Transformace do jednotného formátu
+**Important Discovery:**
+- This table ALREADY contains API keys for Daft and MyHome!
+- `daft_api_key` - Direct Daft API key
+- `myhome_api_key` - MyHome API key
+- `myhome_group_id` - MyHome Group ID
+- Multiple other API integrations (stefanmars, fourpm, etc.)
 
-**Z DB1:**
+---
+
+## Key Findings
+
+### Original Assumptions vs Reality
+
+**What we thought:**
+- DB1 = Source database with `agency` and `properties`
+- DB2 = API database with `agency_list` and portal-specific tables
+
+**What it actually is:**
+- DB1 = Aggregated/API database with `agency_list`, `listings`, `property_log`
+- DB2 = Main source database with `properties` and `agencies` (plus API keys!)
+
+### Missing Tables Mentioned by User
+
+The user mentioned these tables, but they were NOT found:
+- `agency_props` - Not found in either DB
+- `daft` - Not found (but see note below)
+- `myhome` - Not found (but see note below)
+- `wordpress_listings` - Not found
+
+**Possible explanations:**
+1. These tables exist in a different schema (not `public`)
+2. They're named differently (e.g., `daft_listings` instead of `daft`)
+3. They're dynamic tables (e.g., `agency_props_[agency_name]_[hash]`)
+4. They haven't been created yet
+5. The user's description referred to a different database setup
+
+---
+
+## Recommended Search Strategy
+
+### Search by Agency Name
+
 ```javascript
-{
-  id: row.id,
-  title: row.title,                    // "Luxury Apartment Dublin 4"
-  address: row.address,                // "Ballsbridge, Dublin 4"
-  price: row.price,
-  bedrooms: row.bedrooms,
-  bathrooms: row.bathrooms,
-  propertyType: row.property_type,
-  agency: {
-    id: row.agency.id,
-    name: row.agency.name              // "CKP"
-  }
-}
+// Step 1: Get agency from DB1
+const { data: db1Agency } = await supabase1
+  .from('agency_list')
+  .select('*')
+  .ilike('agency_name', '%Acme Realty%')
+  .single();
+
+// Step 2: Get agency from DB2 (includes API keys!)
+const { data: db2Agency } = await supabase2
+  .from('agencies')
+  .select('*')
+  .ilike('name', '%Acme Realty%')
+  .single();
+
+// Step 3: Get properties from DB2
+const { data: properties } = await supabase2
+  .from('properties')
+  .select('*')
+  .eq('agency_id', db2Agency.id);
+// OR search by name:
+  .ilike('agency_name', '%Acme Realty%');
 ```
 
-**Z DB2:**
+### Linking Between Databases
+
+**By Agency Name:**
+- DB1 `agency_list.agency_name` ⟷ DB2 `agencies.name`
+- DB2 `properties.agency_name` contains the text name
+
+**By Agency ID:**
+- DB1 `agency_list.agency_id` (unique identifier)
+- DB2 `agencies.id` (primary key)
+- DB2 `properties.agency_id` (foreign key)
+
+**Note:** The `agency_id` fields in DB1 and DB2 might NOT be the same values!
+Link by name matching, not by ID matching.
+
+---
+
+## API Keys Management
+
+### Three Potential Sources:
+
+1. **JSON File** (`src/data/agencies.json`)
+   - Contains: DaftApiKey, MyhomeApi (ApiKey + GroupID)
+   - Manually maintained
+   - Used as fallback
+
+2. **DB2 agencies table**
+   - Contains: daft_api_key, myhome_api_key, myhome_group_id
+   - Stored directly in database
+   - **Recommended primary source**
+
+3. **DB1 metadata**
+   - The `agency_list.metadata` field might contain additional info
+   - Needs investigation
+
+### Recommended Approach:
+
 ```javascript
-{
-  id: row.id,
-  title: `Property by ${row.agency_name}`,  // "Property by Blue Sky"
-  address: row.address1,                     // "Anne Street, Newbridge"
-  price: row.price,
-  bedrooms: row.house_bedrooms,
-  bathrooms: row.house_bathrooms,
-  propertyType: row.property_type,
-  agency: {
-    id: row.agency_name.toLowerCase().replace(/\s+/g, '-'),  // "blue-sky"
-    name: row.agency_name                    // "Blue Sky"
-  }
-}
+// Priority order for API keys:
+1. Check DB2 agencies table first (most authoritative)
+2. Fallback to JSON file if DB2 is missing keys
+3. Cache for performance
 ```
 
-## 🎯 Klíčové rozdíly
+---
 
-| Vlastnost | DB1 | DB2 |
-|-----------|-----|-----|
-| **Agency vztah** | Foreign key | Text field |
-| **Title sloupec** | `title` | N/A (generuje se) |
-| **Address sloupec** | `address` | `address1` |
-| **Bedrooms sloupec** | `bedrooms` | `house_bedrooms` |
-| **Bathrooms sloupec** | `bathrooms` | `house_bathrooms` |
-| **JOIN potřeba** | Ano (properties ⟷ agencies) | Ne |
+## Updated dual-database-search.ts Logic
 
-## 🔍 Příklad vyhledávání
+The functions need to be updated to:
 
-Když uživatel zadá "CKP":
+1. **Search DB1 `agency_list`** (not `agency`)
+2. **Search DB2 `agencies`** (not `agency_list`)
+3. **Search DB2 `properties`** (not DB1)
+4. **Pull API keys from DB2 `agencies`** (primary) or JSON (fallback)
 
-1. **Detekce schémat**
-   ```
-   DB1: Detekováno 'properties' + 'agencies' schéma
-   DB2: Načítám seznam všech tabulek...
-   DB2: Nalezeno 150 agency_props_* tabulek
-   ```
+---
 
-2. **Filtrování relevantních tabulek**
-   ```
-   DB2: Query "CKP" → hledám tabulky obsahující "ckp"
-   DB2: Nalezeno 3 relevantní tabulky:
-        - agency_props_casey_kennedy_estates_agents_abc123
-        - agency_props_ckp_properties_def456
-        - agency_props_chris_kenny_property_ghi789
-   ```
+## Data Flow Diagram
 
-3. **Paralelní dotazy**
-   ```
-   DB1: Hledá v properties.title, agencies.name, properties.address
-   DB2:
-      - Agency props: Prohledává 3 tabulky paralelně (každá max 100 záznamů)
-      - Listings: Prohledává 3 listings tabulky paralelně (daft, myhome, wordpress)
-   ```
-
-4. **Sloučení výsledků**
-   ```
-   DB1: 3 nemovitosti (z properties + agencies)
-   DB2:
-      - agency_props: 32 nemovitostí (z 3 agency_props_* tabulek)
-      - listings: 15 nemovitostí (8 z daft, 5 z myhome, 2 z wordpress)
-      - celkem: 47 nemovitostí
-   CELKEM: 50 nemovitostí
-   ```
-
-## 🛠️ Přidání dalšího schématu
-
-Pokud máte databázi s jiným schématem, přidejte ho do `src/services/database-adapter.ts`:
-
-```typescript
-{
-    propertiesTable: 'your_table_name',
-    agenciesTable: 'your_agencies_table',
-    columnMapping: {
-        properties: {
-            id: 'id',
-            title: 'your_title_column',        // nebo použijte 'agency_name' pokud title neexistuje
-            address: 'your_address_column',
-            price: 'your_price_column',
-            bedrooms: 'your_bedrooms_column',
-            bathrooms: 'your_bathrooms_column',
-            propertyType: 'your_type_column',
-            agencyId: 'your_agency_column',    // může být ID nebo TEXT
-            // ... ostatní sloupce
-        },
-        agencies: {
-            id: 'id',
-            name: 'name',
-            // ...
-        }
-    }
-}
+```
+User searches "Acme Realty"
+    |
+    ├─> DB1: agency_list.agency_name ILIKE '%Acme Realty%'
+    |       └─> Returns: agency_id, agency_name, logo_url
+    |
+    ├─> DB2: agencies.name ILIKE '%Acme Realty%'
+    |       └─> Returns: id, name, daft_api_key, myhome_api_key, etc.
+    |
+    └─> DB2: properties WHERE agency_name ILIKE '%Acme Realty%'
+            OR properties WHERE agency_id = [id from agencies]
+            └─> Returns: All properties for that agency
 ```
 
-## 💡 Tipy pro debugging
+---
 
-1. **Zkontroluj strukturu v konzoli**
-   - Otevři Developer Console (F12)
-   - Hned po načtení uvidíš všechny detekované tabulky a sloupce
+## Questions to Investigate
 
-2. **Sleduj vyhledávání**
-   - Při každém vyhledávání uvidíš:
-     - Které schéma se použilo
-     - Kolik výsledků vrátila každá DB
-     - Případné chyby
+1. What is the relationship between DB1 `agency_list.agency_id` and DB2 `agencies.id`?
+2. What data exists in DB1 `listings` table?
+3. Are there any other schemas besides `public`?
+4. Do the `agency_props_*`, `daft`, `myhome`, `wordpress_listings` tables exist somewhere?
+5. What format is `properties.pics` vs `properties.images`?
 
-3. **Testuj s konkrétními agency**
-   - Pro DB1: Zkus "CKP" (má foreign key vztah)
-   - Pro DB2: Zkus "Blue Sky" (text v agency_name)
+---
 
-## ✅ Výhody tohoto řešení
+## Debugging Commands
 
-1. **Flexibilní** - funguje s různými strukturami
-2. **Automatické** - detekuje schéma při startu
-3. **Robustní** - pokračuje i když jedna DB selže
-4. **Snadné rozšíření** - stačí přidat nové schéma do pole
-5. **Jednotný výstup** - všechny výsledky mají stejný formát
+```javascript
+// Check if agency_id values match across databases
+// DB1
+const db1Agencies = await supabase1.from('agency_list').select('agency_id, agency_name').limit(5);
+
+// DB2
+const db2Agencies = await supabase2.from('agencies').select('id, name').limit(5);
+
+// Compare to see if IDs align
+```
+
+---
+
+## Notes
+
+- DB2 appears to be the "main" database with all the properties and agency details
+- DB1 appears to be a simplified/aggregated view or API layer
+- The `property_log` in DB1 suggests it tracks changes to properties in DB2
+- API keys are already in DB2, so the JSON file might be redundant or for migration purposes
