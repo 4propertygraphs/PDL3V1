@@ -1149,13 +1149,24 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
 
 // Hide property detail with tabs
 function hidePropertyDetailWithTabs(): void {
+    console.log('🔙 Hiding property detail, returning to agency detail');
     const detailContainer = document.querySelector('.property-detail-container');
-    const resultsContainer = document.querySelector('.results-container');
+    const agencyContainer = document.querySelector('.agency-detail-container');
 
-    detailContainer?.classList.add('hidden');
-    resultsContainer?.classList.remove('hidden');
+    if (detailContainer) {
+        detailContainer.classList.add('hidden');
+    }
 
-    currentState = 'results';
+    if (agencyContainer) {
+        agencyContainer.classList.remove('hidden');
+        const agencyEl = agencyContainer as HTMLElement;
+        agencyEl.style.zIndex = '20000';
+        agencyEl.style.pointerEvents = 'auto';
+        agencyEl.style.opacity = '1';
+        agencyEl.style.transform = 'translateX(-50%) scale(1)';
+    }
+
+    currentState = 'agency-detail';
 }
 
 // Hide property detail
