@@ -195,12 +195,26 @@ export async function getAgencyByIdOrName(searchTerm: string): Promise<any | nul
         if (!dbSchema) dbSchema = await detectSchema(supabase2);
         if (!dbSchema) return null;
 
-        const { data, error } = await supabase2
+        // First try by name or unique_key (text fields)
+        let { data, error } = await supabase2
             .from(dbSchema.agenciesTable)
             .select('*')
-            .or(`id.eq.${searchTerm},name.ilike.%${searchTerm}%,unique_key.ilike.%${searchTerm}%`)
+            .or(`name.ilike.%${searchTerm}%,unique_key.ilike.%${searchTerm}%`)
             .limit(1)
             .maybeSingle();
+
+        // If not found and searchTerm is numeric, try by ID
+        if (!data && !error && !Number.isNaN(Number(searchTerm))) {
+            const result = await supabase2
+                .from(dbSchema.agenciesTable)
+                .select('*')
+                .eq('id', Number(searchTerm))
+                .limit(1)
+                .maybeSingle();
+
+            data = result.data;
+            error = result.error;
+        }
 
         if (error) {
             console.error('Error fetching agency:', error);

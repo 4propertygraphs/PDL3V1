@@ -389,9 +389,9 @@ function showResults(results: SearchResults): void {
                         <div class="property-card-content">
                             <div class="property-address">${property.address}</div>
                             <div class="property-meta">
-                                <div class="meta-item">🛏️ ${property.bedrooms}</div>
-                                <div class="meta-item">🚿 ${property.bathrooms}</div>
-                                <div class="meta-item">🏠 ${property.propertyType}</div>
+                                <div class="meta-item">${property.bedrooms} bed</div>
+                                <div class="meta-item">${property.bathrooms} bath</div>
+                                <div class="meta-item">${property.propertyType}</div>
                             </div>
                             <div class="property-price">${formatPrice(property.price)}</div>
                             <div class="property-agency">
