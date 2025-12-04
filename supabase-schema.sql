@@ -2,10 +2,13 @@
 CREATE TABLE IF NOT EXISTS agencies (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
+    office TEXT,
     address TEXT,
     phone TEXT,
     email TEXT,
     website TEXT,
+    logo TEXT,
+    unique_key TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

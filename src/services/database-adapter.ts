@@ -23,10 +23,13 @@ export interface DatabaseSchema {
         agencies: {
             id: string;
             name: string;
+            office?: string;
             address?: string;
             phone?: string;
             email?: string;
             website?: string;
+            logo?: string;
+            uniqueKey?: string;
         };
     };
 }
@@ -56,10 +59,13 @@ export async function detectSchema(client: any): Promise<DatabaseSchema | null> 
                 agencies: {
                     id: 'id',
                     name: 'name',
+                    office: 'office_name',
                     address: 'address',
-                    phone: '',
-                    email: '',
-                    website: 'site'
+                    phone: 'phone',
+                    email: 'email',
+                    website: 'site',
+                    logo: 'logo',
+                    uniqueKey: 'unique_key'
                 }
             }
         },
@@ -86,10 +92,13 @@ export async function detectSchema(client: any): Promise<DatabaseSchema | null> 
                 agencies: {
                     id: 'id',
                     name: 'name',
+                    office: 'office',
                     address: 'address',
                     phone: 'phone',
                     email: 'email',
-                    website: 'website'
+                    website: 'website',
+                    logo: 'logo',
+                    uniqueKey: 'unique_key'
                 }
             }
         },
@@ -116,10 +125,13 @@ export async function detectSchema(client: any): Promise<DatabaseSchema | null> 
                 agencies: {
                     id: 'id',
                     name: 'name',
+                    office: 'office',
                     address: 'address',
                     phone: 'phone',
                     email: 'email',
-                    website: 'website'
+                    website: 'website',
+                    logo: 'logo',
+                    uniqueKey: 'unique_key'
                 }
             }
         }
@@ -231,13 +243,18 @@ export function transformToProperty(item: any, schema: DatabaseSchema): Property
         description: (cols.description && cols.description !== '' && item[cols.description]) ? item[cols.description] : (item.description || ''),
         images: (() => {
             const rawImages = (cols.images && cols.images !== '' && item[cols.images]) ? item[cols.images] : (item.images || []);
+            console.log('📸 Raw images for property:', { rawImages, type: typeof rawImages });
             if (typeof rawImages === 'string') {
                 try {
-                    return JSON.parse(rawImages);
+                    const parsed = JSON.parse(rawImages);
+                    console.log('   Parsed as JSON:', parsed);
+                    return parsed;
                 } catch {
+                    console.log('   Using as single URL');
                     return rawImages ? [rawImages] : [];
                 }
             }
+            console.log('   Using as array:', rawImages);
             return Array.isArray(rawImages) ? rawImages : [];
         })(),
         coordinates: (cols.latitude && cols.latitude !== '' && cols.longitude && cols.longitude !== '' && item[cols.latitude] && item[cols.longitude]) ? {

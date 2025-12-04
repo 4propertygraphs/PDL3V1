@@ -140,17 +140,22 @@ export async function searchPropertiesFromDB(query: string, filters?: any): Prom
         const agenciesData = await Promise.all(
             agencyIds.map(async (agencyName) => {
                 const agency = await getAgencyByIdOrName(agencyName);
-                if (agency) {
-                    return {
-                        id: String(agency.id),
-                        name: agency.name || agencyName,
-                        address: agency.address || '',
-                        phone: agency.phone,
-                        email: agency.email,
-                        website: agency.website,
-                        logo: agency.logo,
-                        office: agency.office
+                console.log(`🏢 Loading agency "${agencyName}":`, agency);
+                if (agency && dbSchema) {
+                    const cols = dbSchema.columnMapping.agencies;
+                    console.log('   Column mapping:', cols);
+                    const result = {
+                        id: String(agency[cols.id]),
+                        name: agency[cols.name] || agencyName,
+                        office: (cols.office && agency[cols.office]) ? agency[cols.office] : undefined,
+                        address: (cols.address && agency[cols.address]) ? agency[cols.address] : '',
+                        phone: (cols.phone && agency[cols.phone]) ? agency[cols.phone] : undefined,
+                        email: (cols.email && agency[cols.email]) ? agency[cols.email] : undefined,
+                        website: (cols.website && agency[cols.website]) ? agency[cols.website] : undefined,
+                        logo: (cols.logo && agency[cols.logo]) ? agency[cols.logo] : undefined
                     };
+                    console.log('   Result:', result);
+                    return result;
                 }
                 return {
                     id: String(agencyName).toLowerCase().replace(/\s+/g, '-'),
