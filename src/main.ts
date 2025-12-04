@@ -114,6 +114,7 @@ function createParticles(): void {
 // Setup event listeners
 function setupEventListeners(): void {
     const searchButton = document.getElementById('searchBtn');
+    const showAllButton = document.getElementById('showAllBtn');
     const searchInput = document.getElementById('searchInput') as HTMLInputElement;
 
     if (searchButton && searchInput) {
@@ -126,14 +127,43 @@ function setupEventListeners(): void {
     } else {
         console.error('❌ Nenalezeny elementy:', { searchButton, searchInput });
     }
+
+    if (showAllButton) {
+        showAllButton.addEventListener('click', () => handleShowAll());
+    }
+}
+
+// Handle show all
+async function handleShowAll(): Promise<void> {
+    currentState = 'searching';
+    startSearchingAnimation();
+
+    try {
+        // Search with wildcard to get all data
+        const results = await searchPropertiesFromDB('*', {});
+        currentResults = results;
+        currentFilters = {};
+
+        // Animate to results
+        setTimeout(() => {
+            currentState = 'results';
+            morphToBox();
+            setTimeout(() => {
+                showResults(results);
+            }, 1500);
+        }, 2000);
+
+    } catch (error) {
+        console.error('Show all error:', error);
+        currentState = 'sphere';
+        resetToSphere();
+    }
 }
 
 // Handle search
 async function handleSearch(): Promise<void> {
     const searchInput = document.getElementById('searchInput') as HTMLInputElement;
-    const query = searchInput?.value.trim();
-
-    if (!query) return;
+    const query = searchInput?.value.trim() || '*';
 
     currentState = 'searching';
     startSearchingAnimation();

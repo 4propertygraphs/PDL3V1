@@ -26,7 +26,7 @@ export async function analyzeSearchQuery(query: string): Promise<AISearchResult>
 
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-5',
+            model: 'gpt-4o-mini',
             messages: [
                 {
                     role: 'system',

@@ -176,9 +176,11 @@ export async function searchWithSchema(
 
     let queryBuilder = client
         .from(schema.propertiesTable)
-        .select('*');
+        .select('*')
+        .limit(100);
 
-    if (query) {
+    // Only apply query conditions if query is not wildcard
+    if (query && query !== '*') {
         const orConditions = [];
 
         if (cols.title) {

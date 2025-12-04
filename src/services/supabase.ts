@@ -144,6 +144,59 @@ async function getAllTableNames(client: any): Promise<string[]> {
     }
 }
 
+async function getAllAgencyPropsData(client: any): Promise<Property[]> {
+    try {
+        console.log(`🔎 DB2: Načítám všechna data z agency_props_* tabulek...`);
+
+        // Získáme všechny tabulky
+        const allTables = await getAllTableNames(client);
+
+        // Filtrujeme jen agency_props_* tabulky
+        const agencyPropsTables = allTables.filter(t => t.startsWith('agency_props_'));
+
+        console.log(`   📋 Celkem ${agencyPropsTables.length} agency_props_* tabulek`);
+
+        if (agencyPropsTables.length === 0) {
+            console.log(`   ℹ️  Žádné agency_props_* tabulky nenalezeny`);
+            return [];
+        }
+
+        // Načteme data ze všech tabulek paralelně
+        const searchPromises = agencyPropsTables.slice(0, 10).map(async (tableName: string) => {
+            try {
+                const { data, error } = await client
+                    .from(tableName)
+                    .select('*')
+                    .limit(20); // Limit per table for performance
+
+                if (error) {
+                    console.log(`   ⚠️  Chyba v tabulce ${tableName}:`, error.message);
+                    return [];
+                }
+
+                // Extrahujeme název agentury z názvu tabulky
+                const agencyName = extractAgencyNameFromTable(tableName);
+                console.log(`   📦 ${tableName}: ${data?.length || 0} záznamů (${agencyName})`);
+
+                return (data || []).map((item: any) => transformAgencyPropsToProperty(item, agencyName));
+            } catch (err) {
+                console.error(`   ❌ Chyba při čtení ${tableName}:`, err);
+                return [];
+            }
+        });
+
+        const results = await Promise.all(searchPromises);
+        const allProperties = results.flat();
+
+        console.log(`   ✅ DB2 agency_props: Celkem ${allProperties.length} nemovitostí`);
+
+        return allProperties;
+    } catch (error) {
+        console.error('❌ Chyba při načítání všech agency_props dat:', error);
+        return [];
+    }
+}
+
 async function searchAgencyPropsTables(
     client: any,
     query: string,
@@ -256,97 +309,6 @@ function transformAgencyPropsToProperty(item: any, agencyName: string): Property
     };
 }
 
-async function searchListingsTables(
-    client: any,
-    query: string,
-    _filters: any
-): Promise<Property[]> {
-    try {
-        console.log(`🔎 DB2: Hledám v listings tabulkách pro dotaz "${query}"...`);
-
-        const listingsTables = ['daft_listings', 'myhome_listings', 'wordpress_listings'];
-        const normalizedQuery = query.toLowerCase();
-
-        const searchPromises = listingsTables.map(async (tableName: string) => {
-            try {
-                const { data, error } = await client
-                    .from(tableName)
-                    .select('*')
-                    .limit(100);
-
-                if (error) {
-                    console.log(`   ℹ️  Tabulka ${tableName} není dostupná nebo je prázdná`);
-                    return [];
-                }
-
-                const source = tableName.replace('_listings', '');
-                console.log(`   📦 ${tableName}: ${data?.length || 0} záznamů`);
-
-                return (data || [])
-                    .filter((item: any) => {
-                        const searchableText = [
-                            item.title,
-                            item.address,
-                            item.address1,
-                            item.eircode,
-                            item.description
-                        ].filter(Boolean).join(' ').toLowerCase();
-
-                        return searchableText.includes(normalizedQuery);
-                    })
-                    .map((item: any) => transformListingsToProperty(item, source));
-            } catch (err) {
-                console.log(`   ℹ️  Nepodařilo se načíst ${tableName}`);
-                return [];
-            }
-        });
-
-        const results = await Promise.all(searchPromises);
-        const allProperties = results.flat();
-
-        console.log(`   ✅ DB2 listings: Celkem ${allProperties.length} nemovitostí`);
-
-        return allProperties;
-    } catch (error) {
-        console.error('❌ Chyba při hledání v listings tabulkách:', error);
-        return [];
-    }
-}
-
-function transformListingsToProperty(item: any, source: string): Property {
-    const price = Number(item.price) || 0;
-    const images = Array.isArray(item.images) ? item.images : (item.pics ? JSON.parse(item.pics) : []);
-
-    return {
-        id: item.id || item.unique_key || `${source}-${Math.random()}`,
-        title: item.title || item.name || 'Property',
-        address: item.address || item.address1 || '',
-        eircode: item.eircode,
-        price,
-        bedrooms: Number(item.bedrooms || item.house_bedrooms) || 0,
-        bathrooms: Number(item.bathrooms || item.house_bathrooms) || 0,
-        propertyType: item.property_type || item.propertyType || 'Property',
-        description: item.description || '',
-        images,
-        coordinates: (item.latitude && item.longitude) ? {
-            lat: Number(item.latitude),
-            lng: Number(item.longitude)
-        } : undefined,
-        agency: {
-            id: item.agency_id || `${source}-agency`,
-            name: item.agency_name || source.charAt(0).toUpperCase() + source.slice(1),
-            address: item.agency_address || '',
-        },
-        sources: [{
-            source: source as 'daft' | 'myhome' | 'wordpress' | 'others',
-            url: item.url || '',
-            price,
-            lastUpdated: item.last_updated || item.updated_at || new Date().toISOString(),
-            description: item.description,
-            images
-        }]
-    };
-}
 
 export async function searchPropertiesFromDB(query: string, filters?: any): Promise<SearchResults> {
     try {
@@ -358,14 +320,17 @@ export async function searchPropertiesFromDB(query: string, filters?: any): Prom
         if (!db1Schema) db1Schema = await detectSchema(supabase1);
         if (!db2Schema) db2Schema = await detectSchema(supabase2);
 
+        // If query is empty or "*", get all data
+        const isGetAll = !query || query.trim() === '' || query.trim() === '*';
+
         // DB1: Standardní hledání
-        const result1 = await searchInDatabase(supabase1, query, filters, 'DB1 (izuvblxr)', db1Schema);
+        const result1 = await searchInDatabase(supabase1, isGetAll ? '*' : query, filters, 'DB1 (izuvblxr)', db1Schema);
 
         // DB2: Hledáme ve všech zdrojích paralelně
-        const [agencyPropsResults, listingsResults] = await Promise.all([
-            searchAgencyPropsTables(supabase2, query, filters),
-            searchListingsTables(supabase2, query, filters)
-        ]);
+        const agencyPropsResults = isGetAll
+            ? await getAllAgencyPropsData(supabase2)
+            : await searchAgencyPropsTables(supabase2, query, filters);
+        const listingsResults: Property[] = []; // Skip listings for now
 
         // Sloučíme data z obou databází a transformujeme je
         const properties1 = (result1.data || []).map((item: any) =>
