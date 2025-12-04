@@ -32,28 +32,6 @@ export interface DatabaseSchema {
 }
 
 export async function detectSchema(client: any): Promise<DatabaseSchema | null> {
-    // Nejprve zjistíme, jaké sloupce skutečně existují
-    console.log('🔍 Zjišťuji strukturu databáze...');
-    const { data: testData, error: testError } = await client
-        .from('properties')
-        .select('*')
-        .limit(1);
-
-    if (!testError && testData && testData.length > 0) {
-        const actualColumns = Object.keys(testData[0]);
-        console.log('📋 Skutečné sloupce v tabulce properties:', actualColumns.join(', '));
-    }
-
-    const { data: agenciesTest, error: agenciesError } = await client
-        .from('agencies')
-        .select('*')
-        .limit(1);
-
-    if (!agenciesError && agenciesTest && agenciesTest.length > 0) {
-        const actualColumns = Object.keys(agenciesTest[0]);
-        console.log('📋 Skutečné sloupce v tabulce agencies:', actualColumns.join(', '));
-    }
-
     const possibleSchemas: DatabaseSchema[] = [
         {
             propertiesTable: 'properties',
@@ -61,27 +39,27 @@ export async function detectSchema(client: any): Promise<DatabaseSchema | null> 
             columnMapping: {
                 properties: {
                     id: 'id',
-                    title: 'title',
+                    title: 'agency_name',
                     address: 'address',
-                    eircode: 'eircode',
-                    price: 'price',
-                    bedrooms: 'bedrooms',
-                    bathrooms: 'bathrooms',
-                    propertyType: 'property_type',
-                    description: 'description',
+                    eircode: '',
+                    price: 'house_price',
+                    bedrooms: 'beds',
+                    bathrooms: 'house_bathrooms',
+                    propertyType: 'type',
+                    description: '',
                     images: 'images',
-                    latitude: 'latitude',
-                    longitude: 'longitude',
+                    latitude: '',
+                    longitude: '',
                     agencyId: 'agency_id',
-                    sources: 'sources'
+                    sources: 'source'
                 },
                 agencies: {
                     id: 'id',
                     name: 'name',
                     address: 'address',
-                    phone: 'phone',
-                    email: 'email',
-                    website: 'website'
+                    phone: '',
+                    email: '',
+                    website: 'site'
                 }
             }
         },
@@ -205,18 +183,14 @@ export async function searchWithSchema(
     if (query && query !== '*') {
         const orConditions = [];
 
-        if (cols.title) {
+        if (cols.title && cols.title !== '') {
             orConditions.push(`${cols.title}.ilike.%${query}%`);
         }
-        if (cols.address) {
+        if (cols.address && cols.address !== '') {
             orConditions.push(`${cols.address}.ilike.%${query}%`);
         }
-        if (cols.eircode) {
+        if (cols.eircode && cols.eircode !== '') {
             orConditions.push(`${cols.eircode}.ilike.%${query}%`);
-        }
-
-        if (cols.agencyId && cols.agencyId !== cols.title) {
-            orConditions.push(`${cols.agencyId}.ilike.%${query}%`);
         }
 
         if (orConditions.length > 0) {
@@ -225,12 +199,12 @@ export async function searchWithSchema(
     }
 
     if (filters) {
-        if (filters.minPrice && cols.price) queryBuilder = queryBuilder.gte(cols.price, filters.minPrice);
-        if (filters.maxPrice && cols.price) queryBuilder = queryBuilder.lte(cols.price, filters.maxPrice);
-        if (filters.minBedrooms && cols.bedrooms) queryBuilder = queryBuilder.gte(cols.bedrooms, filters.minBedrooms);
-        if (filters.maxBedrooms && cols.bedrooms) queryBuilder = queryBuilder.lte(cols.bedrooms, filters.maxBedrooms);
-        if (filters.propertyType && cols.propertyType) queryBuilder = queryBuilder.eq(cols.propertyType, filters.propertyType);
-        if (filters.location && cols.address) queryBuilder = queryBuilder.ilike(cols.address, `%${filters.location}%`);
+        if (filters.minPrice && cols.price && cols.price !== '') queryBuilder = queryBuilder.gte(cols.price, filters.minPrice);
+        if (filters.maxPrice && cols.price && cols.price !== '') queryBuilder = queryBuilder.lte(cols.price, filters.maxPrice);
+        if (filters.minBedrooms && cols.bedrooms && cols.bedrooms !== '') queryBuilder = queryBuilder.gte(cols.bedrooms, filters.minBedrooms);
+        if (filters.maxBedrooms && cols.bedrooms && cols.bedrooms !== '') queryBuilder = queryBuilder.lte(cols.bedrooms, filters.maxBedrooms);
+        if (filters.propertyType && cols.propertyType && cols.propertyType !== '') queryBuilder = queryBuilder.eq(cols.propertyType, filters.propertyType);
+        if (filters.location && cols.address && cols.address !== '') queryBuilder = queryBuilder.ilike(cols.address, `%${filters.location}%`);
     }
 
     return await queryBuilder;
@@ -239,20 +213,24 @@ export async function searchWithSchema(
 export function transformToProperty(item: any, schema: DatabaseSchema): Property {
     const cols = schema.columnMapping.properties;
 
-    const agencyName = item[cols.agencyId] || item[cols.title] || 'Unknown Agency';
+    const agencyName = (cols.title && cols.title !== '' && item[cols.title]) ||
+                       (cols.agencyId && cols.agencyId !== '' && item[cols.agencyId]) ||
+                       'Unknown Agency';
 
     return {
         id: item[cols.id],
-        title: (cols.title === cols.agencyId ? `Property by ${agencyName}` : (item[cols.title] || 'Untitled Property')),
-        address: item[cols.address] || item.address1 || item.address || '',
-        eircode: cols.eircode ? item[cols.eircode] : undefined,
-        price: Number(item[cols.price] || item.price) || 0,
-        bedrooms: Number(item[cols.bedrooms] || item.house_bedrooms || item.bedrooms) || 0,
-        bathrooms: Number(item[cols.bathrooms] || item.house_bathrooms || item.bathrooms) || 0,
-        propertyType: item[cols.propertyType] || item.property_type || 'Property',
-        description: cols.description ? (item[cols.description] || item.description || '') : '',
-        images: cols.images ? (item[cols.images] || item.images || []) : [],
-        coordinates: (cols.latitude && cols.longitude && item[cols.latitude] && item[cols.longitude]) ? {
+        title: (cols.title && cols.title !== '' && item[cols.title]) ?
+               (cols.title === cols.agencyId ? `Property by ${agencyName}` : item[cols.title]) :
+               'Untitled Property',
+        address: (cols.address && cols.address !== '' ? item[cols.address] : '') || item.address1 || item.address || '',
+        eircode: (cols.eircode && cols.eircode !== '' && item[cols.eircode]) ? item[cols.eircode] : undefined,
+        price: Number((cols.price && cols.price !== '' ? item[cols.price] : null) || item.price || item.house_price) || 0,
+        bedrooms: Number((cols.bedrooms && cols.bedrooms !== '' ? item[cols.bedrooms] : null) || item.house_bedrooms || item.bedrooms || item.beds) || 0,
+        bathrooms: Number((cols.bathrooms && cols.bathrooms !== '' ? item[cols.bathrooms] : null) || item.house_bathrooms || item.bathrooms || item.baths) || 0,
+        propertyType: (cols.propertyType && cols.propertyType !== '' ? item[cols.propertyType] : null) || item.property_type || item.type || 'Property',
+        description: (cols.description && cols.description !== '' && item[cols.description]) ? item[cols.description] : (item.description || ''),
+        images: (cols.images && cols.images !== '' && item[cols.images]) ? item[cols.images] : (item.images || []),
+        coordinates: (cols.latitude && cols.latitude !== '' && cols.longitude && cols.longitude !== '' && item[cols.latitude] && item[cols.longitude]) ? {
             lat: Number(item[cols.latitude]),
             lng: Number(item[cols.longitude])
         } : (item.latitude && item.longitude ? {
@@ -260,10 +238,10 @@ export function transformToProperty(item: any, schema: DatabaseSchema): Property
             lng: Number(item.longitude)
         } : undefined),
         agency: {
-            id: agencyName.toLowerCase().replace(/\s+/g, '-'),
-            name: agencyName,
+            id: String(agencyName).toLowerCase().replace(/\s+/g, '-'),
+            name: String(agencyName),
             address: '',
         },
-        sources: cols.sources ? (item[cols.sources] || item.sources || []) : []
+        sources: (cols.sources && cols.sources !== '' && item[cols.sources]) ? item[cols.sources] : (item.sources || [])
     };
 }
