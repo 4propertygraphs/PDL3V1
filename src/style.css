@@ -152,10 +152,11 @@ button:hover .button-content svg {
 }
 
 .results-container.hidden,
-.property-detail-container.hidden {
+.property-detail-container.hidden,
+.agency-detail-container.hidden {
     opacity: 0;
     pointer-events: none;
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%) scale(0.95);
 }
 
 .input-container.hidden {
