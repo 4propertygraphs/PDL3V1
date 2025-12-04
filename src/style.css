@@ -153,10 +153,15 @@ button:hover .button-content svg {
     max-height: 85vh;
     overflow-y: auto;
     z-index: 1000;
-    pointer-events: auto;
+    pointer-events: auto !important;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     opacity: 1;
     transition: all 0.5s ease;
+}
+
+.results-container > *,
+.property-detail-container > * {
+    pointer-events: auto !important;
 }
 
 .results-container.hidden,

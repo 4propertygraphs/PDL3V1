@@ -428,6 +428,7 @@ function showResults(results: SearchResults): void {
 
     resultsContainer.innerHTML = html;
     resultsContainer.classList.remove('hidden');
+    (resultsContainer as HTMLElement).style.pointerEvents = 'auto';
 
     // Remove old click handler if exists
     if (resultsClickHandler) {
@@ -436,22 +437,20 @@ function showResults(results: SearchResults): void {
 
     // Setup property card click handlers using event delegation
     resultsClickHandler = (e: Event) => {
-        console.log('Click detected on results container', e.target);
         const target = e.target as HTMLElement;
         const propertyCard = target.closest('.property-card');
 
-        console.log('Property card found:', propertyCard);
         if (propertyCard) {
+            e.preventDefault();
+            e.stopPropagation();
             const propertyId = (propertyCard as HTMLElement).dataset.propertyId;
-            console.log('Property ID:', propertyId);
             const property = results.properties.find(p => String(p.id) === String(propertyId));
             if (property) {
-                console.log('Showing property detail:', property);
                 showPropertyDetail(property);
             }
         }
     };
-    resultsContainer.addEventListener('click', resultsClickHandler);
+    resultsContainer.addEventListener('click', resultsClickHandler, true);
 
     // Setup filter handlers
     const applyFiltersBtn = document.getElementById('applyFilters');
