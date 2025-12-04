@@ -1150,15 +1150,12 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
 // Hide property detail with tabs
 function hidePropertyDetailWithTabs(): void {
     const detailContainer = document.querySelector('.property-detail-container');
-    const agencyContainer = document.querySelector('.agency-detail-container');
+    const resultsContainer = document.querySelector('.results-container');
 
     detailContainer?.classList.add('hidden');
-    agencyContainer?.classList.remove('hidden');
-    (agencyContainer as HTMLElement).style.opacity = '1';
-    (agencyContainer as HTMLElement).style.transform = 'translateX(-50%) scale(1)';
-    (agencyContainer as HTMLElement).style.pointerEvents = 'auto';
+    resultsContainer?.classList.remove('hidden');
 
-    currentState = 'agency-detail';
+    currentState = 'results';
 }
 
 // Hide property detail
