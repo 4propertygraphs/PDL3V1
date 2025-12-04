@@ -590,6 +590,23 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
 
     document.getElementById('backFromAgency')?.addEventListener('click', hideAgencyDetail);
 
+    // Setup property cards first
+    document.querySelectorAll('.property-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const target = e.target as HTMLElement;
+            // Don't trigger if clicking on favorite button
+            if (target.closest('.favorite-button')) {
+                return;
+            }
+
+            const propertyId = (card as HTMLElement).dataset.propertyId;
+            const property = properties.find(p => p.id === propertyId);
+            if (property) {
+                showPropertyDetailWithTabs(property, agency);
+            }
+        });
+    });
+
     // Setup favorite buttons
     const setupFavorites = async () => {
         const favorites = await getFavorites();
@@ -602,6 +619,7 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
             }
 
             btn.addEventListener('click', async (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 const currentFavorites = await getFavorites();
                 const isCurrentlyFavorite = currentFavorites.includes(propertyId);
@@ -618,16 +636,6 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
     };
 
     setupFavorites();
-
-    document.querySelectorAll('.property-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const propertyId = (card as HTMLElement).dataset.propertyId;
-            const property = properties.find(p => p.id === propertyId);
-            if (property) {
-                showPropertyDetailWithTabs(property, agency);
-            }
-        });
-    });
 }
 
 // Hide agency detail
