@@ -1151,6 +1151,9 @@ function hidePropertyDetailWithTabs(): void {
 
     detailContainer?.classList.add('hidden');
     agencyContainer?.classList.remove('hidden');
+    (agencyContainer as HTMLElement).style.opacity = '1';
+    (agencyContainer as HTMLElement).style.transform = 'translateX(-50%) scale(1)';
+    (agencyContainer as HTMLElement).style.pointerEvents = 'auto';
 
     currentState = 'agency-detail';
 }
