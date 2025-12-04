@@ -32,6 +32,28 @@ export interface DatabaseSchema {
 }
 
 export async function detectSchema(client: any): Promise<DatabaseSchema | null> {
+    // Nejprve zjistíme, jaké sloupce skutečně existují
+    console.log('🔍 Zjišťuji strukturu databáze...');
+    const { data: testData, error: testError } = await client
+        .from('properties')
+        .select('*')
+        .limit(1);
+
+    if (!testError && testData && testData.length > 0) {
+        const actualColumns = Object.keys(testData[0]);
+        console.log('📋 Skutečné sloupce v tabulce properties:', actualColumns.join(', '));
+    }
+
+    const { data: agenciesTest, error: agenciesError } = await client
+        .from('agencies')
+        .select('*')
+        .limit(1);
+
+    if (!agenciesError && agenciesTest && agenciesTest.length > 0) {
+        const actualColumns = Object.keys(agenciesTest[0]);
+        console.log('📋 Skutečné sloupce v tabulce agencies:', actualColumns.join(', '));
+    }
+
     const possibleSchemas: DatabaseSchema[] = [
         {
             propertiesTable: 'properties',
