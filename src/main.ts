@@ -651,6 +651,8 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
     agencyContainer.classList.remove('hidden');
     (agencyContainer as HTMLElement).style.zIndex = '20000';
     (agencyContainer as HTMLElement).style.pointerEvents = 'auto';
+    (agencyContainer as HTMLElement).style.opacity = '1';
+    (agencyContainer as HTMLElement).style.transform = 'scale(1)';
 
     console.log('=== AGENCY CONTAINER DEBUG ===');
     console.log('Agency container:', agencyContainer);
@@ -1094,6 +1096,8 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
     detailContainer.classList.remove('hidden');
     (detailContainer as HTMLElement).style.zIndex = '30000';
     (detailContainer as HTMLElement).style.pointerEvents = 'auto';
+    (detailContainer as HTMLElement).style.opacity = '1';
+    (detailContainer as HTMLElement).style.transform = 'scale(1)';
 
     console.log('=== PROPERTY DETAIL CONTAINER DEBUG ===');
     console.log('Property detail container:', detailContainer);
