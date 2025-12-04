@@ -436,13 +436,17 @@ function showResults(results: SearchResults): void {
 
     // Setup property card click handlers using event delegation
     resultsClickHandler = (e: Event) => {
+        console.log('Click detected on results container', e.target);
         const target = e.target as HTMLElement;
         const propertyCard = target.closest('.property-card');
 
+        console.log('Property card found:', propertyCard);
         if (propertyCard) {
             const propertyId = (propertyCard as HTMLElement).dataset.propertyId;
+            console.log('Property ID:', propertyId);
             const property = results.properties.find(p => String(p.id) === String(propertyId));
             if (property) {
+                console.log('Showing property detail:', property);
                 showPropertyDetail(property);
             }
         }
