@@ -18,6 +18,8 @@ export interface Agency {
     phone?: string;
     email?: string;
     website?: string;
+    logo?: string;
+    office?: string;
 }
 
 export interface Property {

@@ -272,20 +272,41 @@ function showResults(results: SearchResults): void {
     // Hide input
     inputContainer?.classList.add('hidden');
 
+    // Check if we have a single agency (agency search)
+    const isSingleAgencySearch = results.agencies.length === 1;
+    const mainAgency = isSingleAgencySearch ? results.agencies[0] : null;
+
     // Build results HTML
     const html = `
         <div class="results-header">
-            <h2>Search Results</h2>
-            <div class="results-stats">
-                <div class="stat-item">
-                    <span class="stat-label">Properties:</span>
-                    <span class="stat-value">${results.properties.length}</span>
+            ${mainAgency ? `
+                <div class="agency-info-header">
+                    <div class="agency-logo-container">
+                        ${mainAgency.logo
+                            ? `<img src="${mainAgency.logo}" alt="${mainAgency.name}" class="agency-logo-image" />`
+                            : `<div class="agency-logo-placeholder-header">${mainAgency.name.charAt(0)}</div>`
+                        }
+                    </div>
+                    <div class="agency-info-text">
+                        <h2>${mainAgency.name}</h2>
+                        ${mainAgency.office ? `<div class="agency-office-text">${mainAgency.office}</div>` : ''}
+                        ${mainAgency.address ? `<div class="agency-address-text">${mainAgency.address}</div>` : ''}
+                        <div class="agency-property-count">${results.properties.length} Properties Available</div>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">Agencies:</span>
-                    <span class="stat-value">${results.agencies.length}</span>
+            ` : `
+                <h2>Search Results</h2>
+                <div class="results-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Properties:</span>
+                        <span class="stat-value">${results.properties.length}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Agencies:</span>
+                        <span class="stat-value">${results.agencies.length}</span>
+                    </div>
                 </div>
-            </div>
+            `}
         </div>
 
         <div class="sources-section">
@@ -352,24 +373,34 @@ function showResults(results: SearchResults): void {
         <div class="properties-section">
             <h3>Properties (${results.properties.length})</h3>
             <div class="properties-list">
-                ${results.properties.map(property => `
+                ${results.properties.map(property => {
+                    const imageUrl = property.images && property.images.length > 0
+                        ? property.images[0]
+                        : 'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=400';
+
+                    return `
                     <div class="property-card" data-property-id="${property.id}">
                         <button class="favorite-button" data-favorite-id="${property.id}">
                             <svg viewBox="0 0 24 24">
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                             </svg>
                         </button>
-                        <div class="property-title">${property.title}</div>
-                        <div class="property-address">${property.address}</div>
-                        <div class="property-meta">
-                            <div class="meta-item">🛏️ ${property.bedrooms} bed</div>
-                            <div class="meta-item">🚿 ${property.bathrooms} bath</div>
-                            <div class="meta-item">🏠 ${property.propertyType}</div>
-                            <div class="meta-item">🏢 ${property.agency.name}</div>
+                        <div class="property-image" style="background-image: url('${imageUrl}')"></div>
+                        <div class="property-card-content">
+                            <div class="property-address">${property.address}</div>
+                            <div class="property-meta">
+                                <div class="meta-item">🛏️ ${property.bedrooms}</div>
+                                <div class="meta-item">🚿 ${property.bathrooms}</div>
+                                <div class="meta-item">🏠 ${property.propertyType}</div>
+                            </div>
+                            <div class="property-price">${formatPrice(property.price)}</div>
+                            <div class="property-agency">
+                                <span class="agency-badge">${property.agency.name}</span>
+                            </div>
                         </div>
-                        <div class="property-price">${formatPrice(property.price)}</div>
                     </div>
-                `).join('')}
+                `;
+                }).join('')}
             </div>
         </div>
 
