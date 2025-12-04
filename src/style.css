@@ -26,10 +26,11 @@ body {
     bottom: 2rem;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 10;
+    z-index: 999;
     width: 90%;
     max-width: 600px;
     padding: 0 1rem;
+    pointer-events: auto;
 }
 
 .input-wrapper {
@@ -147,7 +148,7 @@ button:hover .button-content svg {
     max-width: 1400px;
     max-height: 85vh;
     overflow-y: auto;
-    z-index: 20;
+    z-index: 1000;
     pointer-events: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     opacity: 1;
@@ -323,6 +324,7 @@ button:hover .button-content svg {
 /* Properties List */
 .properties-section {
     margin-bottom: 2rem;
+    pointer-events: auto;
 }
 
 .properties-section h3 {
@@ -336,6 +338,7 @@ button:hover .button-content svg {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.5rem;
+    pointer-events: auto;
 }
 
 .property-card {

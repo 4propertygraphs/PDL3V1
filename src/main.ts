@@ -51,6 +51,7 @@ function init(): void {
 
     const container = document.getElementById('container');
     if (container) {
+        renderer.domElement.style.pointerEvents = 'none';
         container.appendChild(renderer.domElement);
     }
 
