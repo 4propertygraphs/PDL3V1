@@ -1111,7 +1111,14 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
 
     const backButton = detailContainer.querySelector('#backToAgency');
     if (backButton) {
-        backButton.addEventListener('click', hidePropertyDetailWithTabs);
+        console.log('✅ Back button found, adding click listener');
+        backButton.addEventListener('click', (e) => {
+            console.log('🖱️ Back button clicked!');
+            e.preventDefault();
+            hidePropertyDetailWithTabs();
+        });
+    } else {
+        console.error('❌ Back button not found!');
     }
 
     document.querySelectorAll('.tab-button').forEach(btn => {
@@ -1153,20 +1160,34 @@ function hidePropertyDetailWithTabs(): void {
     const detailContainer = document.querySelector('.property-detail-container');
     const agencyContainer = document.querySelector('.agency-detail-container');
 
+    console.log('Detail container:', detailContainer);
+    console.log('Agency container:', agencyContainer);
+    console.log('Agency container has hidden class:', agencyContainer?.classList.contains('hidden'));
+
     if (detailContainer) {
         detailContainer.classList.add('hidden');
+        console.log('✅ Added hidden class to detail container');
     }
 
     if (agencyContainer) {
         agencyContainer.classList.remove('hidden');
         const agencyEl = agencyContainer as HTMLElement;
+        agencyEl.style.display = 'block';
         agencyEl.style.zIndex = '20000';
         agencyEl.style.pointerEvents = 'auto';
         agencyEl.style.opacity = '1';
         agencyEl.style.transform = 'translateX(-50%) scale(1)';
+        console.log('✅ Removed hidden class from agency container');
+        console.log('Agency container computed styles:', {
+            display: getComputedStyle(agencyEl).display,
+            opacity: getComputedStyle(agencyEl).opacity,
+            transform: getComputedStyle(agencyEl).transform,
+            visibility: getComputedStyle(agencyEl).visibility
+        });
     }
 
     currentState = 'agency-detail';
+    console.log('Current state set to:', currentState);
 }
 
 // Hide property detail
