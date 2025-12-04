@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Property, SearchResults } from '../types';
+import { detectSchema, searchWithSchema, transformToProperty, type DatabaseSchema } from './database-adapter';
 
 // První Supabase databáze
 const supabaseUrl1 = import.meta.env.VITE_SUPABASE_URL_1 || 'https://izuvblxrwtmeiywwzufp.supabase.co';
@@ -15,111 +16,99 @@ export const supabase2 = createClient(supabaseUrl2, supabaseKey2);
 // Pro zpětnou kompatibilitu
 export const supabase = supabase1;
 
+// Cache pro detekovaná schémata
+let db1Schema: DatabaseSchema | null = null;
+let db2Schema: DatabaseSchema | null = null;
+
+// Pomocná funkce pro zjištění struktury databáze
+async function detectDatabaseStructure(client: any, dbName: string) {
+    console.log(`\n🔍 Zjišťuji strukturu ${dbName}...`);
+
+    // Zkusíme různé možné názvy tabulek
+    const possibleTables = [
+        'properties', 'property', 'property_log', 'listings',
+        'agencies', 'agency', 'agency_list', 'agents'
+    ];
+
+    const foundTables: any = {};
+
+    for (const tableName of possibleTables) {
+        const { data, error } = await client
+            .from(tableName)
+            .select('*')
+            .limit(1);
+
+        if (!error && data !== null) {
+            foundTables[tableName] = data[0] ? Object.keys(data[0]) : [];
+            console.log(`  ✅ Tabulka '${tableName}' existuje`);
+            console.log(`     Sloupce:`, foundTables[tableName].join(', '));
+        }
+    }
+
+    return foundTables;
+}
+
 // Diagnostika databází při startu
 export async function diagnosticDatabases() {
     console.log('═══════════════════════════════════════');
     console.log('🔧 DIAGNOSTIKA DATABÁZÍ');
     console.log('═══════════════════════════════════════');
 
-    // DB1
-    const { data: agencies1, error: error1 } = await supabase1
-        .from('agencies')
-        .select('id, name')
-        .limit(10);
+    const db1Structure = await detectDatabaseStructure(supabase1, 'DB1 (izuvblxr)');
+    const db2Structure = await detectDatabaseStructure(supabase2, 'DB2 (ywmryhzp)');
 
-    const { count: propertiesCount1 } = await supabase1
-        .from('properties')
-        .select('*', { count: 'exact', head: true });
+    console.log('\n📊 SHRNUTÍ:');
+    console.log('DB1 tabulky:', Object.keys(db1Structure).join(', ') || 'Žádné nenalezeny');
+    console.log('DB2 tabulky:', Object.keys(db2Structure).join(', ') || 'Žádné nenalezeny');
 
-    console.log('DB1 (izuvblxr):');
-    console.log(`  Agencies: ${agencies1?.length || 0}`);
-    if (agencies1 && agencies1.length > 0) {
-        console.log('  Dostupné agencies:', agencies1.map(a => a.name).join(', '));
+    // Detekuj schémata
+    console.log('\n🔍 Detekuji schémata...');
+    db1Schema = await detectSchema(supabase1);
+    db2Schema = await detectSchema(supabase2);
+
+    if (db1Schema) {
+        console.log(`✅ DB1: Používám tabulky '${db1Schema.propertiesTable}' a '${db1Schema.agenciesTable}'`);
+    } else {
+        console.log('❌ DB1: Nepodařilo se detekovat schéma');
     }
-    console.log(`  Properties: ${propertiesCount1 || 0}`);
-    if (error1) console.error('  ❌ Chyba:', error1);
 
-    // DB2
-    const { data: agencies2, error: error2 } = await supabase2
-        .from('agencies')
-        .select('id, name')
-        .limit(10);
-
-    const { count: propertiesCount2 } = await supabase2
-        .from('properties')
-        .select('*', { count: 'exact', head: true });
-
-    console.log('\nDB2 (ywmryhzp):');
-    console.log(`  Agencies: ${agencies2?.length || 0}`);
-    if (agencies2 && agencies2.length > 0) {
-        console.log('  Dostupné agencies:', agencies2.map(a => a.name).join(', '));
+    if (db2Schema) {
+        console.log(`✅ DB2: Používám tabulky '${db2Schema.propertiesTable}' a '${db2Schema.agenciesTable}'`);
+    } else {
+        console.log('❌ DB2: Nepodařilo se detekovat schéma');
     }
-    console.log(`  Properties: ${propertiesCount2 || 0}`);
-    if (error2) console.error('  ❌ Chyba:', error2);
 
     console.log('═══════════════════════════════════════\n');
+
+    return { db1: db1Structure, db2: db2Structure };
 }
 
 // Helper funkce pro vyhledávání v jedné databázi
-async function searchInDatabase(client: any, query: string, filters?: any, dbName: string = 'DB') {
+async function searchInDatabase(
+    client: any,
+    query: string,
+    filters?: any,
+    dbName: string = 'DB',
+    schema?: DatabaseSchema | null
+) {
     console.log(`🔍 ${dbName}: Začínám hledání pro "${query}"`);
 
-    let queryBuilder = client
-        .from('properties')
-        .select(`
-            *,
-            agency:agencies(*)
-        `);
-
-    // Apply search - including agency name search
-    if (query) {
-        // Search by agency name first
-        const { data: agenciesData, error: agencyError } = await client
-            .from('agencies')
-            .select('id, name')
-            .ilike('name', `%${query}%`);
-
-        console.log(`📋 ${dbName}: Našel jsem ${agenciesData?.length || 0} agencies s názvem obsahujícím "${query}"`);
-        if (agenciesData && agenciesData.length > 0) {
-            console.log(`📋 ${dbName}: Agency IDs:`, agenciesData.map((a: any) => `${a.name} (${a.id})`));
-        }
-        if (agencyError) {
-            console.error(`❌ ${dbName}: Chyba při hledání agencies:`, agencyError);
-        }
-
-        // Build OR condition including agency search
-        const orConditions = [
-            `title.ilike.%${query}%`,
-            `address.ilike.%${query}%`,
-            `eircode.ilike.%${query}%`
-        ];
-
-        if (agenciesData && agenciesData.length > 0) {
-            const agencyIds = agenciesData.map((a: any) => a.id);
-            orConditions.push(`agency_id.in.(${agencyIds.join(',')})`);
-        }
-
-        queryBuilder = queryBuilder.or(orConditions.join(','));
-        console.log(`🔍 ${dbName}: OR podmínky:`, orConditions.join(' OR '));
+    if (!schema) {
+        console.error(`❌ ${dbName}: Schéma není k dispozici`);
+        return { data: null, error: { message: 'Schema not detected' } };
     }
 
-    // Apply filters
-    if (filters) {
-        if (filters.minPrice) queryBuilder = queryBuilder.gte('price', filters.minPrice);
-        if (filters.maxPrice) queryBuilder = queryBuilder.lte('price', filters.maxPrice);
-        if (filters.minBedrooms) queryBuilder = queryBuilder.gte('bedrooms', filters.minBedrooms);
-        if (filters.maxBedrooms) queryBuilder = queryBuilder.lte('bedrooms', filters.maxBedrooms);
-        if (filters.propertyType) queryBuilder = queryBuilder.eq('property_type', filters.propertyType);
-        if (filters.location) queryBuilder = queryBuilder.ilike('address', `%${filters.location}%`);
+    try {
+        const result = await searchWithSchema(client, schema, query, filters);
+        console.log(`✅ ${dbName}: Výsledek - našel ${result.data?.length || 0} nemovitostí`);
+        if (result.error) {
+            console.error(`❌ ${dbName}: Chyba při hledání:`, result.error);
+        }
+        return result;
+    } catch (error) {
+        console.error(`❌ ${dbName}: Výjimka při hledání:`, error);
+        return { data: null, error };
     }
-
-    const result = await queryBuilder;
-    console.log(`✅ ${dbName}: Výsledek - našel ${result.data?.length || 0} nemovitostí`);
-    if (result.error) {
-        console.error(`❌ ${dbName}: Chyba při hledání properties:`, result.error);
-    }
-
-    return result;
 }
 
 export async function searchPropertiesFromDB(query: string, filters?: any): Promise<SearchResults> {
@@ -128,58 +117,45 @@ export async function searchPropertiesFromDB(query: string, filters?: any): Prom
         console.log(`🔍 ZAČÁTEK HLEDÁNÍ: "${query}"`);
         console.log('═══════════════════════════════════════');
 
+        // Ujistíme se, že máme schémata
+        if (!db1Schema) db1Schema = await detectSchema(supabase1);
+        if (!db2Schema) db2Schema = await detectSchema(supabase2);
+
         // Hledáme v OBOU databázích současně
         const [result1, result2] = await Promise.all([
-            searchInDatabase(supabase1, query, filters, 'DB1 (izuvblxr)'),
-            searchInDatabase(supabase2, query, filters, 'DB2 (ywmryhzp)')
+            searchInDatabase(supabase1, query, filters, 'DB1 (izuvblxr)', db1Schema),
+            searchInDatabase(supabase2, query, filters, 'DB2 (ywmryhzp)', db2Schema)
         ]);
 
-        // Sloučíme data z obou databází
-        const allData = [
-            ...(result1.data || []),
-            ...(result2.data || [])
-        ];
+        // Sloučíme data z obou databází a transformujeme je
+        const properties1 = (result1.data || []).map((item: any) =>
+            db1Schema ? transformToProperty(item, db1Schema) : null
+        ).filter(Boolean) as Property[];
+
+        const properties2 = (result2.data || []).map((item: any) =>
+            db2Schema ? transformToProperty(item, db2Schema) : null
+        ).filter(Boolean) as Property[];
+
+        const properties = [...properties1, ...properties2];
 
         // Logování pro debug
         console.log('───────────────────────────────────────');
         console.log(`📊 VÝSLEDKY HLEDÁNÍ:`);
-        console.log(`   DB1 (izuvblxr): ${result1.data?.length || 0} nemovitostí`);
-        console.log(`   DB2 (ywmryhzp): ${result2.data?.length || 0} nemovitostí`);
-        console.log(`   ✅ CELKEM: ${allData.length} nemovitostí`);
+        console.log(`   DB1 (izuvblxr): ${properties1.length} nemovitostí`);
+        console.log(`   DB2 (ywmryhzp): ${properties2.length} nemovitostí`);
+        console.log(`   ✅ CELKEM: ${properties.length} nemovitostí`);
         console.log('═══════════════════════════════════════');
 
         if (result1.error) console.error('❌ DB1 chyba:', result1.error);
         if (result2.error) console.error('❌ DB2 chyba:', result2.error);
 
-        if (allData.length === 0) {
+        if (properties.length === 0) {
             return { query, properties: [], agencies: [], sources: { daft: 0, myhome: 0, wordpress: 0, others: 0 } };
         }
 
-        // Transform data to match our types
-        const properties: Property[] = allData.map((item: any) => ({
-            id: item.id,
-            title: item.title,
-            address: item.address,
-            eircode: item.eircode,
-            price: item.price,
-            bedrooms: item.bedrooms,
-            bathrooms: item.bathrooms,
-            propertyType: item.property_type,
-            description: item.description || '',
-            images: item.images || [],
-            coordinates: item.coordinates ? {
-                lat: item.coordinates.lat || item.latitude,
-                lng: item.coordinates.lng || item.longitude
-            } : undefined,
-            agency: item.agency || {
-                id: 'unknown',
-                name: 'Unknown Agency',
-                address: '',
-            },
-            sources: item.sources || []
-        }));
-
-        const agencies = Array.from(new Set(properties.map(p => p.agency)));
+        const agencies = Array.from(
+            new Map(properties.map(p => [p.agency.id, p.agency])).values()
+        );
 
         const sources = {
             daft: 0,
