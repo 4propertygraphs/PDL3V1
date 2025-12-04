@@ -694,8 +694,11 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
     };
     agencyContainer.addEventListener('click', agencyClickHandler);
 
-    // Scroll to top when showing agency detail
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to top when showing agency detail (instant, not smooth)
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    console.log('✅ Agency detail should be visible now');
+    console.log('   Container has class "hidden"?', agencyContainer.classList.contains('hidden'));
 }
 
 // Hide agency detail
@@ -767,19 +770,27 @@ function initializeMap(properties: Property[]): void {
 
 // Show property detail
 function showPropertyDetail(property: Property): void {
+    console.log('🏠 showPropertyDetail called with property:', property.id);
     const detailContainer = document.querySelector('.property-detail-container');
     const resultsContainer = document.querySelector('.results-container');
 
-    if (!detailContainer) return;
+    if (!detailContainer) {
+        console.error('❌ Property detail container not found!');
+        return;
+    }
 
     currentState = 'property-detail';
-    resultsContainer?.classList.add('hidden');
 
+    // Scroll to top first (instant, not smooth)
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    // Then hide results and show detail
+    resultsContainer?.classList.add('hidden');
     renderPropertyDetail(property, detailContainer);
     detailContainer.classList.remove('hidden');
 
-    // Scroll to top when showing detail
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    console.log('✅ Property detail should be visible now');
+    console.log('   Container has class "hidden"?', detailContainer.classList.contains('hidden'));
 }
 
 // Render property detail
@@ -1114,8 +1125,11 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
         });
     });
 
-    // Scroll to top when showing detail
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to top when showing detail (instant, not smooth)
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    console.log('✅ Property detail with tabs should be visible now');
+    console.log('   Container has class "hidden"?', detailContainer.classList.contains('hidden'));
 }
 
 // Hide property detail with tabs
