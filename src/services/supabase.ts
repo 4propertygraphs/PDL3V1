@@ -200,31 +200,6 @@ export async function searchPropertiesFromDB(query: string, filters?: any): Prom
     }
 }
 
-// Favorites management
-export async function getFavorites(): Promise<string[]> {
-    const favorites = localStorage.getItem('pdl3_favorites');
-    return favorites ? JSON.parse(favorites) : [];
-}
-
-export async function addFavorite(propertyId: string): Promise<void> {
-    const favorites = await getFavorites();
-    if (!favorites.includes(propertyId)) {
-        favorites.push(propertyId);
-        localStorage.setItem('pdl3_favorites', JSON.stringify(favorites));
-    }
-}
-
-export async function removeFavorite(propertyId: string): Promise<void> {
-    const favorites = await getFavorites();
-    const updated = favorites.filter(id => id !== propertyId);
-    localStorage.setItem('pdl3_favorites', JSON.stringify(updated));
-}
-
-export async function isFavorite(propertyId: string): Promise<boolean> {
-    const favorites = await getFavorites();
-    return favorites.includes(propertyId);
-}
-
 // Get agency by ID or name
 export async function getAgencyByIdOrName(searchTerm: string): Promise<any | null> {
     try {

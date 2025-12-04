@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { AppState, SearchFilters, SearchResults, Property } from './types';
 import { calculatePropertyDeltas, formatPrice, formatDate } from './utils';
-import { searchPropertiesFromDB, getFavorites, addFavorite, removeFavorite, diagnosticDatabases, getAgencyByIdOrName, getPropertiesByAgency } from './services/supabase';
+import { searchPropertiesFromDB, diagnosticDatabases, getAgencyByIdOrName, getPropertiesByAgency } from './services/supabase';
 import { analyzeSearchQuery } from './services/openai';
 import { exportToPDF, exportToExcel } from './services/export';
 import './style.css';
@@ -389,11 +389,6 @@ function showResults(results: SearchResults): void {
 
                     return `
                     <div class="property-card" data-property-id="${property.id}">
-                        <button class="favorite-button" data-favorite-id="${property.id}">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                            </svg>
-                        </button>
                         <div class="property-image" style="background-image: url('${imageUrl}')"></div>
                         <div class="property-card-content">
                             <div class="property-address">${property.address}</div>
@@ -439,40 +434,9 @@ function showResults(results: SearchResults): void {
     resultsContainer.innerHTML = html;
     resultsContainer.classList.remove('hidden');
 
-    // Setup favorite buttons
-    const setupFavorites = async () => {
-        const favorites = await getFavorites();
-        document.querySelectorAll('.favorite-button').forEach(async (btn) => {
-            const propertyId = (btn as HTMLElement).dataset.favoriteId!;
-            const isFav = favorites.includes(propertyId);
-
-            if (isFav) {
-                btn.classList.add('active');
-            }
-
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-
-                if (btn.classList.contains('active')) {
-                    await removeFavorite(propertyId);
-                    btn.classList.remove('active');
-                } else {
-                    await addFavorite(propertyId);
-                    btn.classList.add('active');
-                }
-            });
-        });
-    };
-    setupFavorites();
-
     // Setup property card click handlers
     document.querySelectorAll('.property-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-            // Don't trigger if clicking favorite button
-            if ((e.target as HTMLElement).closest('.favorite-button')) {
-                return;
-            }
-
+        card.addEventListener('click', () => {
             const propertyId = (card as HTMLElement).dataset.propertyId;
             const property = results.properties.find(p => String(p.id) === String(propertyId));
             if (property) {
@@ -562,11 +526,6 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
 
                         return `
                         <div class="property-card" data-property-id="${property.id}">
-                            <button class="favorite-button" data-favorite-id="${property.id}">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                                </svg>
-                            </button>
                             <div class="property-image" style="background-image: url('${imageUrl}')"></div>
                             <div class="property-card-content">
                                 <div class="property-title">${property.address}</div>
@@ -590,15 +549,9 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
 
     document.getElementById('backFromAgency')?.addEventListener('click', hideAgencyDetail);
 
-    // Setup property cards first
+    // Setup property cards
     document.querySelectorAll('.property-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-            const target = e.target as HTMLElement;
-            // Don't trigger if clicking on favorite button
-            if (target.closest('.favorite-button')) {
-                return;
-            }
-
+        card.addEventListener('click', () => {
             const propertyId = (card as HTMLElement).dataset.propertyId;
             const property = properties.find(p => p.id === propertyId);
             if (property) {
@@ -606,36 +559,6 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
             }
         });
     });
-
-    // Setup favorite buttons
-    const setupFavorites = async () => {
-        const favorites = await getFavorites();
-        document.querySelectorAll('.favorite-button').forEach(async (btn) => {
-            const propertyId = (btn as HTMLElement).dataset.favoriteId!;
-            const isFav = favorites.includes(propertyId);
-
-            if (isFav) {
-                btn.classList.add('active');
-            }
-
-            btn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const currentFavorites = await getFavorites();
-                const isCurrentlyFavorite = currentFavorites.includes(propertyId);
-
-                if (isCurrentlyFavorite) {
-                    await removeFavorite(propertyId);
-                    btn.classList.remove('active');
-                } else {
-                    await addFavorite(propertyId);
-                    btn.classList.add('active');
-                }
-            });
-        });
-    };
-
-    setupFavorites();
 }
 
 // Hide agency detail
