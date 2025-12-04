@@ -34,13 +34,21 @@ Při vyhledávání aplikace:
 
 Aplikace podporuje tyto varianty:
 
-**Standardní schéma:**
+**Standardní schéma (DB1):**
 ```sql
-properties (title, address, price, bedrooms, ...)
-agencies (name, address, phone, ...)
+properties (title, address, price, bedrooms, bathrooms, property_type, agency_id)
+agencies (id, name, address, phone, email)
+-- agency_id je foreign key na agencies.id
 ```
 
-**Alternativní schéma:**
+**Daft/Scraper schéma (DB2):**
+```sql
+daft_properties (agency_name, address1, price, house_bedrooms, house_bathrooms)
+-- agency_name je TEXT, ne foreign key!
+-- Žádný JOIN na tabulku agencies
+```
+
+**Property Log schéma:**
 ```sql
 property_log (title, address, price, bedrooms, ...)
 agency_list (name, address, phone, ...)

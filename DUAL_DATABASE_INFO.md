@@ -4,13 +4,18 @@ Aplikace nyní hledá v **OBOU Supabase databázích** najednou a sloučí výsl
 
 ## 📊 Připojené databáze:
 
-### Databáze 1
+### Databáze 1 (izuvblxr)
 - **URL**: https://izuvblxrwtmeiywwzufp.supabase.co
 - **Klíč**: Nastaven v `.env` jako `VITE_SUPABASE_KEY_1`
+- **Struktura**: Standardní schéma s `properties` a `agencies` tabulkami
+- **Použití**: Agency data + acquaint data
 
-### Databáze 2
+### Databáze 2 (ywmryhzp)
 - **URL**: https://ywmryhzpojfrmrxgggoy.supabase.co
 - **Klíč**: Nastaven v `.env` jako `VITE_SUPABASE_KEY_2`
+- **Struktura**: Daft scraper schéma s `daft_properties`
+- **Sloupce**: `agency_name` (text), `address1`, `house_bedrooms`, `house_bathrooms`
+- **Použití**: Data z Daft, WordPress, MyHome
 
 ## 🚀 Jak to funguje:
 

@@ -64,6 +64,36 @@ export async function detectSchema(client: any): Promise<DatabaseSchema | null> 
             }
         },
         {
+            propertiesTable: 'daft_properties',
+            agenciesTable: 'agencies',
+            columnMapping: {
+                properties: {
+                    id: 'id',
+                    title: 'agency_name',
+                    address: 'address1',
+                    eircode: 'eircode',
+                    price: 'price',
+                    bedrooms: 'house_bedrooms',
+                    bathrooms: 'house_bathrooms',
+                    propertyType: 'property_type',
+                    description: 'description',
+                    images: 'images',
+                    latitude: 'latitude',
+                    longitude: 'longitude',
+                    agencyId: 'agency_name',
+                    sources: 'sources'
+                },
+                agencies: {
+                    id: 'id',
+                    name: 'name',
+                    address: 'address',
+                    phone: 'phone',
+                    email: 'email',
+                    website: 'website'
+                }
+            }
+        },
+        {
             propertiesTable: 'property_log',
             agenciesTable: 'agency_list',
             columnMapping: {
@@ -119,17 +149,9 @@ export async function searchWithSchema(
 
     let queryBuilder = client
         .from(schema.propertiesTable)
-        .select(`
-            *,
-            agency:${schema.agenciesTable}(*)
-        `);
+        .select('*');
 
     if (query) {
-        const { data: agenciesData } = await client
-            .from(schema.agenciesTable)
-            .select(`${schema.columnMapping.agencies.id}, ${schema.columnMapping.agencies.name}`)
-            .ilike(schema.columnMapping.agencies.name, `%${query}%`);
-
         const orConditions = [];
 
         if (cols.title) {
@@ -142,9 +164,8 @@ export async function searchWithSchema(
             orConditions.push(`${cols.eircode}.ilike.%${query}%`);
         }
 
-        if (agenciesData && agenciesData.length > 0) {
-            const agencyIds = agenciesData.map((a: any) => a[schema.columnMapping.agencies.id]);
-            orConditions.push(`${cols.agencyId}.in.(${agencyIds.join(',')})`);
+        if (cols.agencyId && cols.agencyId !== cols.title) {
+            orConditions.push(`${cols.agencyId}.ilike.%${query}%`);
         }
 
         if (orConditions.length > 0) {
@@ -153,12 +174,12 @@ export async function searchWithSchema(
     }
 
     if (filters) {
-        if (filters.minPrice) queryBuilder = queryBuilder.gte(cols.price, filters.minPrice);
-        if (filters.maxPrice) queryBuilder = queryBuilder.lte(cols.price, filters.maxPrice);
-        if (filters.minBedrooms) queryBuilder = queryBuilder.gte(cols.bedrooms, filters.minBedrooms);
-        if (filters.maxBedrooms) queryBuilder = queryBuilder.lte(cols.bedrooms, filters.maxBedrooms);
-        if (filters.propertyType) queryBuilder = queryBuilder.eq(cols.propertyType, filters.propertyType);
-        if (filters.location) queryBuilder = queryBuilder.ilike(cols.address, `%${filters.location}%`);
+        if (filters.minPrice && cols.price) queryBuilder = queryBuilder.gte(cols.price, filters.minPrice);
+        if (filters.maxPrice && cols.price) queryBuilder = queryBuilder.lte(cols.price, filters.maxPrice);
+        if (filters.minBedrooms && cols.bedrooms) queryBuilder = queryBuilder.gte(cols.bedrooms, filters.minBedrooms);
+        if (filters.maxBedrooms && cols.bedrooms) queryBuilder = queryBuilder.lte(cols.bedrooms, filters.maxBedrooms);
+        if (filters.propertyType && cols.propertyType) queryBuilder = queryBuilder.eq(cols.propertyType, filters.propertyType);
+        if (filters.location && cols.address) queryBuilder = queryBuilder.ilike(cols.address, `%${filters.location}%`);
     }
 
     return await queryBuilder;
@@ -167,26 +188,31 @@ export async function searchWithSchema(
 export function transformToProperty(item: any, schema: DatabaseSchema): Property {
     const cols = schema.columnMapping.properties;
 
+    const agencyName = item[cols.agencyId] || item[cols.title] || 'Unknown Agency';
+
     return {
         id: item[cols.id],
-        title: item[cols.title] || 'Untitled Property',
-        address: item[cols.address] || '',
+        title: (cols.title === cols.agencyId ? `Property by ${agencyName}` : (item[cols.title] || 'Untitled Property')),
+        address: item[cols.address] || item.address1 || item.address || '',
         eircode: cols.eircode ? item[cols.eircode] : undefined,
-        price: Number(item[cols.price]) || 0,
-        bedrooms: Number(item[cols.bedrooms]) || 0,
-        bathrooms: Number(item[cols.bathrooms]) || 0,
-        propertyType: item[cols.propertyType] || 'Unknown',
-        description: cols.description ? (item[cols.description] || '') : '',
-        images: cols.images ? (item[cols.images] || []) : [],
+        price: Number(item[cols.price] || item.price) || 0,
+        bedrooms: Number(item[cols.bedrooms] || item.house_bedrooms || item.bedrooms) || 0,
+        bathrooms: Number(item[cols.bathrooms] || item.house_bathrooms || item.bathrooms) || 0,
+        propertyType: item[cols.propertyType] || item.property_type || 'Property',
+        description: cols.description ? (item[cols.description] || item.description || '') : '',
+        images: cols.images ? (item[cols.images] || item.images || []) : [],
         coordinates: (cols.latitude && cols.longitude && item[cols.latitude] && item[cols.longitude]) ? {
             lat: Number(item[cols.latitude]),
             lng: Number(item[cols.longitude])
-        } : undefined,
-        agency: item.agency || {
-            id: 'unknown',
-            name: 'Unknown Agency',
+        } : (item.latitude && item.longitude ? {
+            lat: Number(item.latitude),
+            lng: Number(item.longitude)
+        } : undefined),
+        agency: {
+            id: agencyName.toLowerCase().replace(/\s+/g, '-'),
+            name: agencyName,
             address: '',
         },
-        sources: cols.sources ? (item[cols.sources] || []) : []
+        sources: cols.sources ? (item[cols.sources] || item.sources || []) : []
     };
 }
