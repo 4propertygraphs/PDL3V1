@@ -534,10 +534,12 @@ function showResults(results: SearchResults): void {
 function showAgencyDetail(agency: any, properties: Property[]): void {
     const agencyContainer = document.querySelector('.agency-detail-container');
     const inputContainer = document.querySelector('.input-container');
+    const resultsContainer = document.querySelector('.results-container');
 
     if (!agencyContainer) return;
 
     inputContainer?.classList.add('hidden');
+    resultsContainer?.classList.add('hidden');
 
     console.log('🏢 Rendering agency detail:', agency);
     const html = `
@@ -584,6 +586,17 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
 
     agencyContainer.innerHTML = html;
     agencyContainer.classList.remove('hidden');
+    (agencyContainer as HTMLElement).style.zIndex = '20000';
+    (agencyContainer as HTMLElement).style.pointerEvents = 'auto';
+
+    console.log('=== AGENCY CONTAINER DEBUG ===');
+    console.log('Agency container:', agencyContainer);
+    console.log('Computed styles:', {
+        zIndex: getComputedStyle(agencyContainer).zIndex,
+        pointerEvents: getComputedStyle(agencyContainer).pointerEvents,
+        display: getComputedStyle(agencyContainer).display,
+        visibility: getComputedStyle(agencyContainer).visibility,
+    });
 
     document.getElementById('backFromAgency')?.addEventListener('click', hideAgencyDetail);
 
@@ -594,11 +607,16 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
 
     // Setup property cards using event delegation
     agencyClickHandler = (e: Event) => {
+        console.log('=== AGENCY CLICK DETECTED ===');
+        console.log('Target:', e.target);
         const target = e.target as HTMLElement;
         const propertyCard = target.closest('.property-card');
+        console.log('Property card:', propertyCard);
 
         if (propertyCard) {
+            console.log('Property card FOUND in agency!');
             const propertyId = (propertyCard as HTMLElement).dataset.propertyId;
+            console.log('Property ID:', propertyId);
             const property = properties.find(p => p.id === propertyId);
             if (property) {
                 showPropertyDetailWithTabs(property, agency);
