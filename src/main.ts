@@ -857,9 +857,10 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
 
                 <div class="tabs-content">
                     <div class="tab-pane active" data-pane="property">
-                        <div class="detail-header">
-                            <div class="detail-title">${property.address}</div>
-                            <div class="detail-price">${formatPrice(property.price)}</div>
+                        <div class="detail-header-enhanced">
+                            <div class="detail-title-main">${property.address}</div>
+                            <div class="detail-price-large">${formatPrice(property.price)}</div>
+                            ${property.eircode ? `<div class="detail-eircode">Eircode: ${property.eircode}</div>` : ''}
                         </div>
 
                         ${property.images && property.images.length > 0 ? `
@@ -877,33 +878,88 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
                             </div>
                         ` : ''}
 
-                        <div class="property-details-grid">
-                            <div class="detail-item">
-                                <div class="detail-label">Bedrooms</div>
-                                <div class="detail-value">${property.bedrooms}</div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">Bathrooms</div>
-                                <div class="detail-value">${property.bathrooms}</div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">Type</div>
-                                <div class="detail-value">${property.propertyType}</div>
-                            </div>
-                            ${property.eircode ? `
-                                <div class="detail-item">
-                                    <div class="detail-label">Eircode</div>
-                                    <div class="detail-value">${property.eircode}</div>
+                        <div class="property-details-section">
+                            <h3 class="section-title">Property Features</h3>
+                            <div class="property-details-grid-enhanced">
+                                <div class="detail-card">
+                                    <div class="detail-icon">🛏️</div>
+                                    <div class="detail-info">
+                                        <div class="detail-label">Bedrooms</div>
+                                        <div class="detail-value-large">${property.bedrooms}</div>
+                                    </div>
                                 </div>
-                            ` : ''}
+                                <div class="detail-card">
+                                    <div class="detail-icon">🚿</div>
+                                    <div class="detail-info">
+                                        <div class="detail-label">Bathrooms</div>
+                                        <div class="detail-value-large">${property.bathrooms}</div>
+                                    </div>
+                                </div>
+                                <div class="detail-card">
+                                    <div class="detail-icon">🏠</div>
+                                    <div class="detail-info">
+                                        <div class="detail-label">Property Type</div>
+                                        <div class="detail-value-large">${property.propertyType}</div>
+                                    </div>
+                                </div>
+                                ${property.coordinates ? `
+                                    <div class="detail-card">
+                                        <div class="detail-icon">📍</div>
+                                        <div class="detail-info">
+                                            <div class="detail-label">Location</div>
+                                            <div class="detail-value-large">Mapped</div>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
                         </div>
 
                         ${property.description ? `
-                            <div class="property-description">
-                                <h3>Description</h3>
-                                <p>${property.description}</p>
+                            <div class="property-description-section">
+                                <h3 class="section-title">About This Property</h3>
+                                <div class="description-content">
+                                    ${property.description.split('\n').map(para =>
+                                        para.trim() ? `<p>${para}</p>` : ''
+                                    ).join('')}
+                                </div>
                             </div>
-                        ` : ''}
+                        ` : `
+                            <div class="property-description-section">
+                                <h3 class="section-title">About This Property</h3>
+                                <div class="description-content">
+                                    <p>This ${property.propertyType.toLowerCase()} is located in ${property.address}.
+                                    It features ${property.bedrooms} bedroom${property.bedrooms > 1 ? 's' : ''} and
+                                    ${property.bathrooms} bathroom${property.bathrooms > 1 ? 's' : ''}, offering comfortable
+                                    living space for you and your family.</p>
+
+                                    <p>The property is currently listed at ${formatPrice(property.price)} and is available
+                                    through ${property.agency.name}. Contact the agency for more information, viewing
+                                    arrangements, or to discuss your requirements.</p>
+
+                                    ${property.eircode ? `<p>Location identifier: ${property.eircode}</p>` : ''}
+                                </div>
+                            </div>
+                        `}
+
+                        <div class="property-details-section">
+                            <h3 class="section-title">Listing Information</h3>
+                            <div class="listing-info-grid">
+                                <div class="info-row">
+                                    <span class="info-label">Listed by:</span>
+                                    <span class="info-value">${property.agency.name}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Property ID:</span>
+                                    <span class="info-value">${property.id}</span>
+                                </div>
+                                ${property.sources && property.sources.length > 0 ? `
+                                    <div class="info-row">
+                                        <span class="info-label">Available on:</span>
+                                        <span class="info-value">${property.sources.length} source${property.sources.length > 1 ? 's' : ''}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
                     </div>
 
                     <div class="tab-pane" data-pane="agent">
