@@ -1,0 +1,88 @@
+[
+  {
+    "Key": "RGMlMmZsTCUyYmwyT0duYmx4aXpNTE5qcFElM2QlM2Q1",
+    "Name": "Ray Maher Property Service",
+    "OfficeName": "Ray Maher Property Service",
+    "Address1": "Asset House",
+    "Address2": "3 Lower Staplestown Road",
+    "Logo": "https://old.4pm.ie/ShowThumbnail.aspx?img=4pm.ie__ray-maher-logo.png&h=140&w=100&crop=False&off=76&t=logo",
+    "Site": "raymaherpropertyservices.com",
+    "AcquiantCustomer": null,
+    "DaftApiKey": "d34826e68eaa5758ecb9decae01e3c9943264e86",
+    "MyhomeApi": null,
+    "uuid": "8d1f8341-15fc-4173-a9c4-bca34cfb0e07"
+  },
+  {
+    "Key": "all1bjllZ0EzQ1VRZnRJMm1uYlR4dyUzZCUzZA2",
+    "Name": "OFarrell Cleere",
+    "OfficeName": "O'Farrell Cleere",
+    "Address1": " 1 New St",
+    "Address2": "",
+    "Logo": "https://old.4pm.ie/ShowThumbnail.aspx?img=Let.ie__ofclogo.jpg&h=140&w=100&crop=False&off=175&t=logo",
+    "Site": "",
+    "AcquiantCustomer": null,
+    "DaftApiKey": null,
+    "MyhomeApi": {
+      "ApiKey": "126FDF4B-28E5-4F17-9FE9-055C868924CF",
+      "GroupID": 5747
+    },
+    "uuid": "9351646a-35ee-46ef-a8e0-8d56d8d9a088"
+  },
+  {
+    "Key": "all1bjllZ0EzQ1VRZnRJMm1uYlR4dyUzZCUzZA2",
+    "Name": "OFarrell Cleere",
+    "OfficeName": "O'Farrell Cleere - Feed from Acquaint to Daft",
+    "Address1": " 1 New St",
+    "Address2": "",
+    "Logo": null,
+    "Site": "",
+    "AcquiantCustomer": {
+      "FourPMBranchID": 131419,
+      "SitePrefix": "OFCA",
+      "SiteID": 0,
+      "SiteName": "O`Farrell Cleere Auctioneers"
+    },
+    "DaftApiKey": null,
+    "MyhomeApi": null,
+    "uuid": "6983e8d7-8dbd-439c-9d4a-c68adc469f87"
+  },
+  {
+    "Key": "dERBQU9VZ3RHNW9KOHpWQThVZ1FhdyUzZCUzZA2",
+    "Name": "DNG Brady",
+    "OfficeName": "DNG Brady",
+    "Address1": "Bridge House",
+    "Address2": "John Street",
+    "Logo": null,
+    "Site": "",
+    "AcquiantCustomer": null,
+    "DaftApiKey": "b688da20cadb68dec529be6a07d1a14cf779bb90",
+    "MyhomeApi": null,
+    "uuid": "c13a3a68-9b7a-480a-bff7-d49afe1f28b1"
+  },
+  {
+    "Key": "enhIekhlakpJTnRaWWsyQncwUVJNUSUzZCUzZA2",
+    "Name": "Lyons Auctioneers Ltd",
+    "OfficeName": "Lyons Auctioneers Ltd",
+    "Address1": "28 Wood Quay",
+    "Address2": "",
+    "Logo": "https://old.4pm.ie/ShowThumbnail.aspx?img=4pm.ie__logo.png&h=140&w=100&crop=False&off=774&t=logo",
+    "Site": "",
+    "AcquiantCustomer": null,
+    "DaftApiKey": null,
+    "MyhomeApi": null,
+    "uuid": "6180c7fd-5408-4eac-8e19-cbbb5f020bd4"
+  },
+  {
+    "Key": "JTJiU3o1NnVJdW5rZ0JuS2dUQ2d0VEN3JTNkJTNk0",
+    "Name": "Carty Property Advisors",
+    "OfficeName": "Carty Property Advisors",
+    "Address1": "Market Street",
+    "Address2": "",
+    "Logo": "https://old.4pm.ie/ShowThumbnail.aspx?img=4pm.ie__untitled.bmp&h=140&w=100&crop=False&off=974&t=logo",
+    "Site": "",
+    "AcquiantCustomer": null,
+    "DaftApiKey": "4dd1ffc935afda3eab9d59579c56d41ae26bde2d",
+    "MyhomeApi": null,
+    "uuid": "e50525e4-d824-4291-a34a-0523fe6752e1"
+  }
+]
