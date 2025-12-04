@@ -99,7 +99,7 @@ export async function detectSchema(client: any): Promise<DatabaseSchema | null> 
             columnMapping: {
                 properties: {
                     id: 'id',
-                    title: 'title',
+                    title: 'name',
                     address: 'address',
                     eircode: 'eircode',
                     price: 'price',
@@ -131,11 +131,38 @@ export async function detectSchema(client: any): Promise<DatabaseSchema | null> 
             .select('*')
             .limit(1);
 
-        if (!error && data !== null) {
-            return schema;
+        if (!error && data !== null && data.length > 0) {
+            const row = data[0];
+            const cols = schema.columnMapping.properties;
+            const availableColumns = Object.keys(row);
+
+            console.log(`🔍 Zkouším tabulku '${schema.propertiesTable}'`);
+            console.log(`   Dostupné sloupce:`, availableColumns.join(', '));
+
+            const hasRequiredColumns =
+                row.hasOwnProperty(cols.id) &&
+                row.hasOwnProperty(cols.address) &&
+                (row.hasOwnProperty(cols.title) || row.hasOwnProperty(cols.agencyId));
+
+            if (hasRequiredColumns) {
+                console.log(`   ✅ Schéma odpovídá! Používám: ${schema.propertiesTable}`);
+                console.log(`   Mapování:`, {
+                    title: cols.title,
+                    address: cols.address,
+                    bedrooms: cols.bedrooms,
+                    bathrooms: cols.bathrooms,
+                    agencyId: cols.agencyId
+                });
+                return schema;
+            } else {
+                console.log(`   ❌ Chybí požadované sloupce`);
+            }
+        } else if (error) {
+            console.log(`❌ Tabulka '${schema.propertiesTable}' neexistuje nebo je nepřístupná`);
         }
     }
 
+    console.error('⚠️ Žádné schéma nebylo detekováno!');
     return null;
 }
 
