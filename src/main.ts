@@ -265,6 +265,127 @@ function morphToBox(): void {
     }
 }
 
+// Show agency grid (like Chi layout)
+function showAgencyGrid(results: SearchResults): void {
+    const resultsContainer = document.querySelector('.results-container');
+    const inputContainer = document.querySelector('.input-container');
+
+    if (!resultsContainer) return;
+
+    inputContainer?.classList.add('hidden');
+
+    const html = `
+        <button class="back-button" id="backButton">← Back to Search</button>
+
+        <div class="agency-grid-container">
+            ${results.agencies.map(agency => {
+                const agencyProperties = results.properties.filter(p =>
+                    p.agency_name === agency.name || p.parent_id === agency.name
+                );
+
+                const daftCount = agencyProperties.filter(p => p.sources.some(s => s.source === 'daft')).length;
+                const myhomeCount = agencyProperties.filter(p => p.sources.some(s => s.source === 'myhome')).length;
+                const wpCount = agencyProperties.filter(p => p.sources.some(s => s.source === 'wordpress')).length;
+
+                return `
+                    <div class="agency-grid-card" data-agency-name="${agency.name}">
+                        <div class="agency-card-header">
+                            <div class="agency-card-logo">
+                                ${agency.logo
+                                    ? `<img src="${agency.logo}" alt="${agency.name}" />`
+                                    : `<div class="agency-logo-placeholder">${agency.name.charAt(0)}</div>`
+                                }
+                            </div>
+                            <div class="agency-card-info">
+                                <h3 class="agency-card-title">${agency.name}</h3>
+                                <div class="agency-card-office">${agency.office || agency.name}</div>
+                            </div>
+                        </div>
+
+                        <div class="agency-card-stats">
+                            <div class="agency-stat">
+                                <span class="stat-label">Properties</span>
+                                <span class="stat-number">${agencyProperties.length}</span>
+                            </div>
+                        </div>
+
+                        <div class="agency-card-sources">
+                            ${daftCount > 0 ? `
+                                <div class="source-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                    </svg>
+                                </div>
+                            ` : ''}
+                            ${myhomeCount > 0 ? `
+                                <div class="source-badge myhome">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16"/>
+                                    </svg>
+                                </div>
+                            ` : ''}
+                            ${wpCount > 0 ? `
+                                <div class="source-badge wordpress">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="9" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="agency-card-actions">
+                            <button class="agency-action-btn show-btn" data-action="show" data-agency-name="${agency.name}">
+                                <span>Show</span>
+                            </button>
+                            <button class="agency-action-btn refresh-btn" data-action="refresh" data-agency-name="${agency.name}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                                <span>Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    resultsContainer.innerHTML = html;
+    resultsContainer.classList.remove('hidden');
+
+    const backButton = document.querySelector('#backButton');
+    if (backButton) {
+        backButton.addEventListener('click', () => {
+            resultsContainer.classList.add('hidden');
+            inputContainer?.classList.remove('hidden');
+        });
+    }
+
+    document.querySelectorAll('.agency-action-btn[data-action="show"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const agencyName = (e.currentTarget as HTMLElement).dataset.agencyName;
+            const agency = results.agencies.find(a => a.name === agencyName);
+            if (agency) {
+                const agencyProperties = results.properties.filter(p =>
+                    p.agency_name === agency.name || p.parent_id === agency.name
+                );
+                showAgencyDetail(agency, agencyProperties);
+            }
+        });
+    });
+
+    document.querySelectorAll('.agency-action-btn[data-action="refresh"]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const refreshBtn = e.currentTarget as HTMLElement;
+            refreshBtn.classList.add('spinning');
+
+            setTimeout(() => {
+                refreshBtn.classList.remove('spinning');
+            }, 1000);
+        });
+    });
+}
+
 // Show results
 function showResults(results: SearchResults): void {
     const resultsContainer = document.querySelector('.results-container');
@@ -274,6 +395,12 @@ function showResults(results: SearchResults): void {
 
     // Hide input
     inputContainer?.classList.add('hidden');
+
+    // Check if we have multiple agencies - show agency grid
+    if (results.agencies.length > 1) {
+        showAgencyGrid(results);
+        return;
+    }
 
     // Check if we have a single agency (agency search)
     const isSingleAgencySearch = results.agencies.length === 1;
@@ -403,8 +530,26 @@ function showResults(results: SearchResults): void {
         </div>
 
         <div class="properties-section">
-            <h3>Properties (${results.properties.length})</h3>
-            <div class="properties-list">
+            <div class="properties-header-bar">
+                <h3>Properties (${results.properties.length})</h3>
+                <div class="view-toggle">
+                    <button class="view-toggle-btn active" data-view="grid">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <rect x="3" y="3" width="7" height="7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <rect x="14" y="3" width="7" height="7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <rect x="3" y="14" width="7" height="7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <rect x="14" y="14" width="7" height="7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <button class="view-toggle-btn" data-view="table">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="properties-list properties-grid-view">
                 ${results.properties.map(property => {
                     const imageUrl = property.images && property.images.length > 0
                         ? property.images[0]
@@ -463,6 +608,65 @@ function showResults(results: SearchResults): void {
                     </div>
                 `;
                 }).join('')}
+            </div>
+
+            <div class="properties-table-view" style="display: none;">
+                <div class="table-wrapper">
+                    <table class="properties-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>External ID</th>
+                                <th>Address</th>
+                                <th>Source</th>
+                                <th>Price</th>
+                                <th>Beds</th>
+                                <th>Baths</th>
+                                <th>Size</th>
+                                <th>Acres</th>
+                                <th>Type</th>
+                                <th>Market</th>
+                                <th>Status</th>
+                                <th>Live Status</th>
+                                <th>Agent</th>
+                                <th>Agent Name</th>
+                                <th>Modified</th>
+                                <th>Parent ID</th>
+                                <th>Agency Name</th>
+                                <th>Created</th>
+                                <th>Updated</th>
+                                <th>Pics</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${results.properties.map(property => `
+                                <tr class="table-row" data-property-id="${property.id}">
+                                    <td>${property.id}</td>
+                                    <td>${property.external_id || '-'}</td>
+                                    <td class="address-cell">${property.address}</td>
+                                    <td>${property.sources.map(s => s.source).join(', ')}</td>
+                                    <td class="price-cell">${formatPrice(property.price)}</td>
+                                    <td>${property.bedrooms || '-'}</td>
+                                    <td>${property.bathrooms || '-'}</td>
+                                    <td>${property.size ? property.size + ' sq.m.' : '-'}</td>
+                                    <td>${property.acres || '-'}</td>
+                                    <td>${property.propertyType || '-'}</td>
+                                    <td>${property.market || 'residential'}</td>
+                                    <td><span class="status-badge-small">${property.status || 'For Sale'}</span></td>
+                                    <td><span class="live-status-badge">${property.live_status || 'Sale Agreed'}</span></td>
+                                    <td>${property.agent || '-'}</td>
+                                    <td>${property.agent_name || '-'}</td>
+                                    <td class="date-cell">${property.modified || '-'}</td>
+                                    <td>${property.parent_id || '-'}</td>
+                                    <td>${property.agency_name || property.agency.name}</td>
+                                    <td class="date-cell">${property.created || '-'}</td>
+                                    <td class="date-cell">${property.updated || '-'}</td>
+                                    <td>${property.images ? property.images.length : 0}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -545,6 +749,38 @@ function showResults(results: SearchResults): void {
         }
     };
     resultsContainer.addEventListener('click', resultsClickHandler);
+
+    // View toggle handlers
+    document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const view = (btn as HTMLElement).dataset.view;
+
+            document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const gridView = resultsContainer.querySelector('.properties-grid-view');
+            const tableView = resultsContainer.querySelector('.properties-table-view');
+
+            if (view === 'grid') {
+                (gridView as HTMLElement).style.display = 'grid';
+                (tableView as HTMLElement).style.display = 'none';
+            } else {
+                (gridView as HTMLElement).style.display = 'none';
+                (tableView as HTMLElement).style.display = 'block';
+            }
+        });
+    });
+
+    // Table row click handlers
+    document.querySelectorAll('.table-row').forEach(row => {
+        row.addEventListener('click', () => {
+            const propertyId = (row as HTMLElement).dataset.propertyId;
+            const property = results.properties.find(p => String(p.id) === String(propertyId));
+            if (property) {
+                showPropertyDetail(property);
+            }
+        });
+    });
 
     // Setup filter handlers
     const applyFiltersBtn = document.getElementById('applyFilters');
@@ -1166,23 +1402,29 @@ function hidePropertyDetailWithTabs(): void {
 
     if (detailContainer) {
         detailContainer.classList.add('hidden');
-        console.log('✅ Added hidden class to detail container');
+        (detailContainer as HTMLElement).style.display = 'none';
+        console.log('✅ Hidden property detail container');
     }
 
     if (agencyContainer) {
         agencyContainer.classList.remove('hidden');
         const agencyEl = agencyContainer as HTMLElement;
-        agencyEl.style.display = 'block';
+        agencyEl.style.display = '';
+        agencyEl.style.position = 'fixed';
         agencyEl.style.zIndex = '20000';
         agencyEl.style.pointerEvents = 'auto';
         agencyEl.style.opacity = '1';
         agencyEl.style.transform = 'translateX(-50%) scale(1)';
-        console.log('✅ Removed hidden class from agency container');
+        agencyEl.style.visibility = 'visible';
+
+        console.log('✅ Showed agency container');
         console.log('Agency container computed styles:', {
             display: getComputedStyle(agencyEl).display,
+            position: getComputedStyle(agencyEl).position,
             opacity: getComputedStyle(agencyEl).opacity,
             transform: getComputedStyle(agencyEl).transform,
-            visibility: getComputedStyle(agencyEl).visibility
+            visibility: getComputedStyle(agencyEl).visibility,
+            zIndex: getComputedStyle(agencyEl).zIndex
         });
     }
 

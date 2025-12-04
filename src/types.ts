@@ -24,6 +24,7 @@ export interface Agency {
 
 export interface Property {
     id: string;
+    external_id?: string;
     title: string;
     address: string;
     eircode?: string;
@@ -34,11 +35,23 @@ export interface Property {
     description: string;
     images: string[];
     agency: Agency;
+    agency_name?: string;
     sources: PropertySource[];
     coordinates?: {
         lat: number;
         lng: number;
     };
+    size?: number;
+    acres?: number;
+    market?: string;
+    status?: string;
+    live_status?: string;
+    agent?: string;
+    agent_name?: string;
+    modified?: string;
+    parent_id?: string;
+    created?: string;
+    updated?: string;
 }
 
 export interface PropertySource {
