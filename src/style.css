@@ -6,9 +6,9 @@
 
 body {
     background: #000;
-    overflow: hidden;
     font-family: 'Inter', sans-serif;
     color: white;
+    min-height: 100vh;
 }
 
 #container {
@@ -139,10 +139,8 @@ button:hover .button-content svg {
 /* Results and Property Detail Containers */
 .results-container,
 .property-detail-container {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: relative;
+    margin: 2rem auto;
     background: rgba(20, 20, 30, 0.95);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -150,8 +148,6 @@ button:hover .button-content svg {
     padding: 2rem;
     width: 95vw;
     max-width: 1400px;
-    max-height: 85vh;
-    overflow-y: auto;
     z-index: 1000;
     pointer-events: auto !important;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -169,7 +165,7 @@ button:hover .button-content svg {
 .agency-detail-container.hidden {
     opacity: 0;
     pointer-events: none;
-    transform: translate(-50%, -50%) scale(0.95);
+    transform: scale(0.95);
 }
 
 .input-container.hidden {
@@ -1055,10 +1051,8 @@ button:hover .button-content svg {
 
 /* Agency Detail Container */
 .agency-detail-container {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: relative;
+    margin: 2rem auto;
     background: linear-gradient(135deg, rgba(20, 20, 30, 0.98), rgba(15, 15, 25, 0.95));
     backdrop-filter: blur(30px);
     border: 1px solid rgba(99, 102, 241, 0.2);
@@ -1066,14 +1060,11 @@ button:hover .button-content svg {
     padding: 2.5rem;
     width: 95vw;
     max-width: 1400px;
-    max-height: 85vh;
-    overflow-y: auto;
     z-index: 20;
     pointer-events: auto;
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(99, 102, 241, 0.1);
     opacity: 1;
     transition: all 0.3s ease;
-    position: relative;
 }
 
 .agency-detail-container::before {
