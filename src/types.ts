@@ -1,4 +1,4 @@
-export type AppState = 'sphere' | 'searching' | 'results' | 'property-detail';
+export type AppState = 'sphere' | 'searching' | 'results' | 'agency-detail' | 'property-detail';
 
 export type Source = 'daft' | 'myhome' | 'wordpress' | 'others';
 

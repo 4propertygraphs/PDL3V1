@@ -188,3 +188,51 @@ export async function isFavorite(propertyId: string): Promise<boolean> {
     const favorites = await getFavorites();
     return favorites.includes(propertyId);
 }
+
+// Get agency by ID or name
+export async function getAgencyByIdOrName(searchTerm: string): Promise<any | null> {
+    try {
+        if (!dbSchema) dbSchema = await detectSchema(supabase2);
+        if (!dbSchema) return null;
+
+        const { data, error } = await supabase2
+            .from(dbSchema.agenciesTable)
+            .select('*')
+            .or(`id.eq.${searchTerm},name.ilike.%${searchTerm}%,unique_key.ilike.%${searchTerm}%`)
+            .limit(1)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Error fetching agency:', error);
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error in getAgencyByIdOrName:', error);
+        return null;
+    }
+}
+
+// Get properties by agency ID
+export async function getPropertiesByAgency(agencyId: number): Promise<Property[]> {
+    try {
+        if (!dbSchema) dbSchema = await detectSchema(supabase2);
+        if (!dbSchema) return [];
+
+        const { data, error } = await supabase2
+            .from(dbSchema.propertiesTable)
+            .select('*')
+            .eq('agency_id', agencyId);
+
+        if (error) {
+            console.error('Error fetching properties:', error);
+            return [];
+        }
+
+        return (data || []).map((item: any) => transformToProperty(item, dbSchema!)).filter(Boolean);
+    } catch (error) {
+        console.error('Error in getPropertiesByAgency:', error);
+        return [];
+    }
+}

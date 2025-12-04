@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { AppState, SearchFilters, SearchResults, Property } from './types';
 import { calculatePropertyDeltas, formatPrice, formatDate } from './utils';
-import { searchPropertiesFromDB, getFavorites, addFavorite, removeFavorite, diagnosticDatabases } from './services/supabase';
+import { searchPropertiesFromDB, getFavorites, addFavorite, removeFavorite, diagnosticDatabases, getAgencyByIdOrName, getPropertiesByAgency } from './services/supabase';
 import { analyzeSearchQuery } from './services/openai';
 import { exportToPDF, exportToExcel } from './services/export';
 import './style.css';
@@ -169,15 +169,29 @@ async function handleSearch(): Promise<void> {
     startSearchingAnimation();
 
     try {
-        // Analyze query with AI
-        const aiResult = await analyzeSearchQuery(query);
+        // First, try to find an agency matching the query
+        const agency = await getAgencyByIdOrName(query);
 
-        // Search with filters
+        if (agency) {
+            // Show agency detail
+            const properties = await getPropertiesByAgency(agency.id);
+
+            setTimeout(() => {
+                currentState = 'agency-detail';
+                morphToBox();
+                setTimeout(() => {
+                    showAgencyDetail(agency, properties);
+                }, 1500);
+            }, 2000);
+            return;
+        }
+
+        // If no agency found, proceed with normal search
+        const aiResult = await analyzeSearchQuery(query);
         const results = await searchPropertiesFromDB(aiResult.searchQuery, aiResult.filters);
         currentResults = results;
         currentFilters = aiResult.filters;
 
-        // Animate to results
         setTimeout(() => {
             currentState = 'results';
             morphToBox();
@@ -474,6 +488,76 @@ function showResults(results: SearchResults): void {
     }
 }
 
+// Show agency detail
+function showAgencyDetail(agency: any, properties: Property[]): void {
+    const agencyContainer = document.querySelector('.agency-detail-container');
+    const inputContainer = document.querySelector('.input-container');
+
+    if (!agencyContainer) return;
+
+    inputContainer?.classList.add('hidden');
+
+    const html = `
+        <div class="agency-detail-content">
+            <button class="back-button" id="backFromAgency">← Back to Search</button>
+
+            <div class="agency-header">
+                ${agency.logo ? `<img src="${agency.logo}" alt="${agency.name}" class="agency-logo">` : ''}
+                <div class="agency-info">
+                    <h1 class="agency-name">${agency.name || ''}</h1>
+                    ${agency.office_name ? `<div class="agency-office">${agency.office_name}</div>` : ''}
+                    ${agency.address ? `<div class="agency-address">${agency.address}</div>` : ''}
+                    ${agency.site ? `<a href="${agency.site}" target="_blank" class="agency-website">${agency.site}</a>` : ''}
+                </div>
+            </div>
+
+            <div class="agency-properties-section">
+                <h2>Properties (${properties.length})</h2>
+                <div class="properties-list">
+                    ${properties.map(property => `
+                        <div class="property-card" data-property-id="${property.id}">
+                            <div class="property-title">${property.address}</div>
+                            <div class="property-meta">
+                                <div class="meta-item">🛏️ ${property.bedrooms} bed</div>
+                                <div class="meta-item">🚿 ${property.bathrooms} bath</div>
+                                <div class="meta-item">🏠 ${property.propertyType}</div>
+                            </div>
+                            <div class="property-price">${formatPrice(property.price)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    agencyContainer.innerHTML = html;
+    agencyContainer.classList.remove('hidden');
+
+    document.getElementById('backFromAgency')?.addEventListener('click', hideAgencyDetail);
+
+    document.querySelectorAll('.property-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const propertyId = (card as HTMLElement).dataset.propertyId;
+            const property = properties.find(p => p.id === propertyId);
+            if (property) {
+                showPropertyDetailWithTabs(property, agency);
+            }
+        });
+    });
+}
+
+// Hide agency detail
+function hideAgencyDetail(): void {
+    const agencyContainer = document.querySelector('.agency-detail-container');
+    const inputContainer = document.querySelector('.input-container');
+
+    agencyContainer?.classList.add('hidden');
+    inputContainer?.classList.remove('hidden');
+
+    currentState = 'sphere';
+    resetToSphere();
+}
+
 // Hide results
 function hideResults(): void {
     const resultsContainer = document.querySelector('.results-container');
@@ -653,6 +737,163 @@ function renderPropertyDetail(property: Property, container: Element): void {
 
     // Setup back button
     document.getElementById('backToResults')?.addEventListener('click', hidePropertyDetail);
+}
+
+// Show property detail with tabs
+function showPropertyDetailWithTabs(property: Property, agency: any): void {
+    const detailContainer = document.querySelector('.property-detail-container');
+    const agencyContainer = document.querySelector('.agency-detail-container');
+
+    if (!detailContainer) return;
+
+    currentState = 'property-detail';
+    agencyContainer?.classList.add('hidden');
+
+    const deltas = calculatePropertyDeltas(property);
+
+    const html = `
+        <div class="detail-content-with-tabs">
+            <button class="back-button" id="backToAgency">← Back to Agency</button>
+
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-button active" data-tab="property">Property Detail</button>
+                    <button class="tab-button" data-tab="agent">Agent</button>
+                    <button class="tab-button" data-tab="delta">Delta</button>
+                </div>
+
+                <div class="tabs-content">
+                    <div class="tab-pane active" data-pane="property">
+                        <div class="detail-header">
+                            <div class="detail-title">${property.address}</div>
+                            <div class="detail-price">${formatPrice(property.price)}</div>
+                        </div>
+
+                        ${property.images && property.images.length > 0 ? `
+                            <div class="detail-gallery">
+                                <div class="gallery-main">
+                                    <img src="${property.images[0]}" alt="Property" class="gallery-main-image">
+                                </div>
+                                ${property.images.length > 1 ? `
+                                    <div class="gallery-thumbnails">
+                                        ${property.images.map((img, i) => `
+                                            <img src="${img}" alt="Property ${i + 1}" class="gallery-thumb ${i === 0 ? 'active' : ''}" data-index="${i}">
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+
+                        <div class="property-details-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Bedrooms</div>
+                                <div class="detail-value">${property.bedrooms}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Bathrooms</div>
+                                <div class="detail-value">${property.bathrooms}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Type</div>
+                                <div class="detail-value">${property.propertyType}</div>
+                            </div>
+                            ${property.eircode ? `
+                                <div class="detail-item">
+                                    <div class="detail-label">Eircode</div>
+                                    <div class="detail-value">${property.eircode}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        ${property.description ? `
+                            <div class="property-description">
+                                <h3>Description</h3>
+                                <p>${property.description}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="tab-pane" data-pane="agent">
+                        <div class="agent-info-section">
+                            ${agency.logo ? `<img src="${agency.logo}" alt="${agency.name}" class="agent-logo">` : ''}
+                            <h2>${agency.name || 'Unknown Agency'}</h2>
+                            ${agency.office_name ? `<div class="agent-office">${agency.office_name}</div>` : ''}
+                            ${agency.address ? `<div class="agent-address">${agency.address}</div>` : ''}
+                            ${agency.site ? `<a href="${agency.site}" target="_blank" class="agent-website">${agency.site}</a>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="tab-pane" data-pane="delta">
+                        <div class="delta-section">
+                            <h3>Source Comparison</h3>
+                            ${property.sources.length > 1 ? `
+                                <div class="delta-list">
+                                    ${deltas.map(delta => `
+                                        <div class="delta-item ${delta.hasDifference ? 'has-difference' : ''}">
+                                            <div class="delta-field">${delta.field}</div>
+                                            <div class="delta-values">
+                                                ${delta.values.map(val => `
+                                                    <div class="delta-value">
+                                                        <span class="delta-source">${val.source}</span>
+                                                        <span class="delta-data">${
+                                                            delta.field === 'Price' ? formatPrice(val.value as number) :
+                                                            delta.field === 'Last Updated' ? formatDate(val.value as string) :
+                                                            val.value
+                                                        }</span>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : '<p>This property is only available from one source.</p>'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    detailContainer.innerHTML = html;
+    detailContainer.classList.remove('hidden');
+
+    document.getElementById('backToAgency')?.addEventListener('click', hidePropertyDetailWithTabs);
+
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = (btn as HTMLElement).dataset.tab;
+
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+            btn.classList.add('active');
+            document.querySelector(`[data-pane="${tab}"]`)?.classList.add('active');
+        });
+    });
+
+    document.querySelectorAll('.gallery-thumb').forEach(thumb => {
+        thumb.addEventListener('click', () => {
+            const index = Number.parseInt((thumb as HTMLElement).dataset.index || '0');
+            const mainImage = document.querySelector('.gallery-main-image') as HTMLImageElement;
+            if (mainImage && property.images[index]) {
+                mainImage.src = property.images[index];
+            }
+
+            document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+            thumb.classList.add('active');
+        });
+    });
+}
+
+// Hide property detail with tabs
+function hidePropertyDetailWithTabs(): void {
+    const detailContainer = document.querySelector('.property-detail-container');
+    const agencyContainer = document.querySelector('.agency-detail-container');
+
+    detailContainer?.classList.add('hidden');
+    agencyContainer?.classList.remove('hidden');
+
+    currentState = 'agency-detail';
 }
 
 // Hide property detail
