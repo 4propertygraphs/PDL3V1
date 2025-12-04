@@ -821,10 +821,17 @@ function renderPropertyDetail(property: Property, container: Element): void {
 
 // Show property detail with tabs
 function showPropertyDetailWithTabs(property: Property, agency: any): void {
+    console.log('🏠 showPropertyDetailWithTabs called with:', property.id);
     const detailContainer = document.querySelector('.property-detail-container');
     const agencyContainer = document.querySelector('.agency-detail-container');
 
-    if (!detailContainer) return;
+    console.log('Detail container:', detailContainer);
+    console.log('Agency container:', agencyContainer);
+
+    if (!detailContainer) {
+        console.error('❌ Property detail container not found!');
+        return;
+    }
 
     currentState = 'property-detail';
     agencyContainer?.classList.add('hidden');
@@ -936,6 +943,18 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
 
     detailContainer.innerHTML = html;
     detailContainer.classList.remove('hidden');
+    (detailContainer as HTMLElement).style.zIndex = '30000';
+    (detailContainer as HTMLElement).style.pointerEvents = 'auto';
+
+    console.log('=== PROPERTY DETAIL CONTAINER DEBUG ===');
+    console.log('Property detail container:', detailContainer);
+    console.log('Computed styles:', {
+        zIndex: getComputedStyle(detailContainer).zIndex,
+        pointerEvents: getComputedStyle(detailContainer).pointerEvents,
+        display: getComputedStyle(detailContainer).display,
+        visibility: getComputedStyle(detailContainer).visibility,
+        opacity: getComputedStyle(detailContainer).opacity,
+    });
 
     document.getElementById('backToAgency')?.addEventListener('click', hidePropertyDetailWithTabs);
 
