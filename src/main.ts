@@ -314,23 +314,51 @@ function showResults(results: SearchResults): void {
         </div>
 
         <div class="sources-section">
-            <h3>Sources</h3>
+            <h3>Data Sources</h3>
             <div class="sources-grid">
-                <div class="source-card">
-                    <div class="source-name">Daft</div>
-                    <div class="source-count">${results.sources.daft}</div>
+                <div class="source-card ${results.sources.daft > 0 ? 'active' : ''}">
+                    <div class="source-icon-wrapper">
+                        <svg class="source-icon daft" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                    </div>
+                    <div class="source-info">
+                        <div class="source-name">Daft.ie</div>
+                        <div class="source-count">${results.sources.daft} ${results.sources.daft === 1 ? 'listing' : 'listings'}</div>
+                    </div>
                 </div>
-                <div class="source-card">
-                    <div class="source-name">MyHome</div>
-                    <div class="source-count">${results.sources.myhome}</div>
+                <div class="source-card ${results.sources.myhome > 0 ? 'active' : ''}">
+                    <div class="source-icon-wrapper">
+                        <svg class="source-icon myhome" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                    </div>
+                    <div class="source-info">
+                        <div class="source-name">MyHome.ie</div>
+                        <div class="source-count">${results.sources.myhome} ${results.sources.myhome === 1 ? 'listing' : 'listings'}</div>
+                    </div>
                 </div>
-                <div class="source-card">
-                    <div class="source-name">WordPress</div>
-                    <div class="source-count">${results.sources.wordpress}</div>
+                <div class="source-card ${results.sources.wordpress > 0 ? 'active' : ''}">
+                    <div class="source-icon-wrapper">
+                        <svg class="source-icon wordpress" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                        </svg>
+                    </div>
+                    <div class="source-info">
+                        <div class="source-name">WordPress</div>
+                        <div class="source-count">${results.sources.wordpress} ${results.sources.wordpress === 1 ? 'listing' : 'listings'}</div>
+                    </div>
                 </div>
-                <div class="source-card">
-                    <div class="source-name">Others</div>
-                    <div class="source-count">${results.sources.others}</div>
+                <div class="source-card ${results.sources.others > 0 ? 'active' : ''}">
+                    <div class="source-icon-wrapper">
+                        <svg class="source-icon others" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
+                        </svg>
+                    </div>
+                    <div class="source-info">
+                        <div class="source-name">Other Sources</div>
+                        <div class="source-count">${results.sources.others} ${results.sources.others === 1 ? 'listing' : 'listings'}</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -382,19 +410,53 @@ function showResults(results: SearchResults): void {
                         ? property.images[0]
                         : 'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=400';
 
+                    const sourceBadges = property.sources.map(src => {
+                        const sourceIcons = {
+                            daft: `<svg class="source-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>`,
+                            myhome: `<svg class="source-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>`,
+                            wordpress: `<svg class="source-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>`,
+                            others: `<svg class="source-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>`
+                        };
+                        return sourceIcons[src.source] || '';
+                    }).join('');
+
                     return `
                     <div class="property-card" data-property-id="${property.id}">
-                        <div class="property-image" style="background-image: url('${imageUrl}')"></div>
+                        <div class="property-image" style="background-image: url('${imageUrl}')">
+                            <div class="property-badges">
+                                <span class="status-badge residential">Residential</span>
+                                <span class="status-badge to-let">To Let</span>
+                            </div>
+                            <div class="property-sources">
+                                ${sourceBadges}
+                            </div>
+                        </div>
                         <div class="property-card-content">
                             <div class="property-address">${property.address}</div>
                             <div class="property-meta">
-                                <div class="meta-item">${property.bedrooms} bed</div>
-                                <div class="meta-item">${property.bathrooms} bath</div>
-                                <div class="meta-item">${property.propertyType}</div>
+                                <div class="meta-item">
+                                    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                    </svg>
+                                    ${property.bedrooms} beds
+                                </div>
+                                <div class="meta-item">
+                                    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    ${property.bathrooms} baths
+                                </div>
+                                <div class="meta-item">
+                                    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/>
+                                    </svg>
+                                    ${property.propertyType}
+                                </div>
                             </div>
                             <div class="property-price">${formatPrice(property.price)}</div>
-                            <div class="property-agency">
-                                <span class="agency-badge">${property.agency.name}</span>
+                            <div class="property-footer">
+                                <span class="agency-badge-compact">${property.agency.name}</span>
+                                ${property.sources.length > 1 ? `<span class="multi-source-badge">${property.sources.length} sources</span>` : ''}
                             </div>
                         </div>
                     </div>
