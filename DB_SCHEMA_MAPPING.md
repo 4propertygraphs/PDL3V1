@@ -23,18 +23,33 @@ Tabulka: agencies
 ```
 
 ### DB2: ywmryhzpojfrmrxgggoy (Daft Scraper schéma)
+
+**DŮLEŽITÉ**: DB2 používá dynamické tabulky ve formátu `agency_props_[název_společnosti]_[hash]`
+
 ```
-Tabulka: daft_properties
-- id (int)
-- agency_name (text) ← PŘÍMO TEXT, ne foreign key!
-- address1 (text)
-- price (numeric)
-- house_bedrooms (int)
-- house_bathrooms (int)
-- property_type (text)
-- images (array)
+Příklady tabulek:
+- agency_props_charlotte_owens_feefea
+- agency_props_charmaine_kelly_0ba53b
+- agency_props_casey_kennedy_estates_agents_...
+- agency_props_ckp_[hash]
+
+Struktura sloupců (různé podle tabulky):
+- id nebo unique_key
+- title nebo name
+- address nebo address1
+- price
+- bedrooms nebo house_bedrooms
+- bathrooms nebo house_bathrooms
+- property_type
+- images nebo pics
+- latitude, longitude
 - sources (jsonb) ← ['daft', 'wordpress', 'myhome']
 ```
+
+**Jak to funguje:**
+- Při vyhledávání "CKP" aplikace najde všechny tabulky obsahující "ckp" v názvu
+- Např. `agency_props_casey_kennedy_*`, `agency_props_ckp_*`
+- Prohledá všechny nalezené tabulky a sloučí výsledky
 
 ## 🔄 Jak aplikace mapuje sloupce
 
@@ -51,9 +66,15 @@ WHERE a.name ILIKE '%CKP%'
 
 **DB2:**
 ```sql
-SELECT * FROM daft_properties
-WHERE agency_name ILIKE '%CKP%'
-   OR address1 ILIKE '%CKP%'
+-- Krok 1: Najdi všechny agency_props_* tabulky
+-- Krok 2: Filtruj tabulky obsahující "ckp" v názvu
+-- Např.: agency_props_casey_kennedy_estates_agents_abc123
+
+-- Krok 3: Pro každou nalezenou tabulku:
+SELECT * FROM agency_props_casey_kennedy_estates_agents_abc123 LIMIT 100
+SELECT * FROM agency_props_ckp_def456 LIMIT 100
+
+-- Krok 4: Sloučit všechny výsledky
 ```
 
 ### Transformace do jednotného formátu
@@ -110,20 +131,30 @@ Když uživatel zadá "CKP":
 1. **Detekce schémat**
    ```
    DB1: Detekováno 'properties' + 'agencies' schéma
-   DB2: Detekováno 'daft_properties' schéma
+   DB2: Načítám seznam všech tabulek...
+   DB2: Nalezeno 150 agency_props_* tabulek
    ```
 
-2. **Paralelní dotazy**
+2. **Filtrování relevantních tabulek**
+   ```
+   DB2: Query "CKP" → hledám tabulky obsahující "ckp"
+   DB2: Nalezeno 3 relevantní tabulky:
+        - agency_props_casey_kennedy_estates_agents_abc123
+        - agency_props_ckp_properties_def456
+        - agency_props_chris_kenny_property_ghi789
+   ```
+
+3. **Paralelní dotazy**
    ```
    DB1: Hledá v properties.title, agencies.name, properties.address
-   DB2: Hledá v daft_properties.agency_name, daft_properties.address1
+   DB2: Prohledává 3 tabulky paralelně (každá max 100 záznamů)
    ```
 
-3. **Sloučení výsledků**
+4. **Sloučení výsledků**
    ```
-   DB1: 3 nemovitosti
-   DB2: 5 nemovitostí
-   CELKEM: 8 nemovitostí
+   DB1: 3 nemovitosti (z properties + agencies)
+   DB2: 45 nemovitostí (z agency_props_* tabulek)
+   CELKEM: 48 nemovitostí
    ```
 
 ## 🛠️ Přidání dalšího schématu
