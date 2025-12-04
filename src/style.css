@@ -530,13 +530,10 @@ button:hover .button-content svg {
 }
 
 .property-badges {
-    position: absolute;
-    top: 0.75rem;
-    left: 0.75rem;
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
-    z-index: 2;
+    margin-bottom: 0.75rem;
 }
 
 .status-badge {
@@ -558,23 +555,19 @@ button:hover .button-content svg {
     color: white;
 }
 
-.property-sources {
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
+.property-sources-inline {
     display: flex;
     gap: 0.375rem;
-    z-index: 2;
+    align-items: center;
 }
 
 .source-badge-icon {
-    width: 24px;
-    height: 24px;
-    padding: 0.25rem;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
-    border-radius: 6px;
-    color: white;
+    width: 20px;
+    height: 20px;
+    padding: 0.2rem;
+    background: rgba(99, 102, 241, 0.15);
+    border-radius: 4px;
+    color: #a5b4fc;
     stroke-width: 2;
 }
 
@@ -648,6 +641,13 @@ button:hover .button-content svg {
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+}
+
+.footer-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .agency-badge-compact {

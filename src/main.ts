@@ -422,16 +422,12 @@ function showResults(results: SearchResults): void {
 
                     return `
                     <div class="property-card" data-property-id="${property.id}">
-                        <div class="property-image" style="background-image: url('${imageUrl}')">
+                        <div class="property-image" style="background-image: url('${imageUrl}')"></div>
+                        <div class="property-card-content">
                             <div class="property-badges">
                                 <span class="status-badge residential">Residential</span>
                                 <span class="status-badge to-let">To Let</span>
                             </div>
-                            <div class="property-sources">
-                                ${sourceBadges}
-                            </div>
-                        </div>
-                        <div class="property-card-content">
                             <div class="property-address">${property.address}</div>
                             <div class="property-meta">
                                 <div class="meta-item">
@@ -455,8 +451,13 @@ function showResults(results: SearchResults): void {
                             </div>
                             <div class="property-price">${formatPrice(property.price)}</div>
                             <div class="property-footer">
-                                <span class="agency-badge-compact">${property.agency.name}</span>
-                                ${property.sources.length > 1 ? `<span class="multi-source-badge">${property.sources.length} sources</span>` : ''}
+                                <div class="footer-left">
+                                    <span class="agency-badge-compact">${property.agency.name}</span>
+                                    ${property.sources.length > 1 ? `<span class="multi-source-badge">${property.sources.length} sources</span>` : ''}
+                                </div>
+                                <div class="property-sources-inline">
+                                    ${sourceBadges}
+                                </div>
                             </div>
                         </div>
                     </div>
