@@ -555,17 +555,31 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
             <div class="agency-properties-section">
                 <h2>Properties (${properties.length})</h2>
                 <div class="properties-list">
-                    ${properties.map(property => `
+                    ${properties.map(property => {
+                        const imageUrl = property.images && property.images.length > 0
+                            ? property.images[0]
+                            : 'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=400';
+
+                        return `
                         <div class="property-card" data-property-id="${property.id}">
-                            <div class="property-title">${property.address}</div>
-                            <div class="property-meta">
-                                <div class="meta-item">🛏️ ${property.bedrooms} bed</div>
-                                <div class="meta-item">🚿 ${property.bathrooms} bath</div>
-                                <div class="meta-item">🏠 ${property.propertyType}</div>
+                            <button class="favorite-button" data-favorite-id="${property.id}">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                            </button>
+                            <div class="property-image" style="background-image: url('${imageUrl}')"></div>
+                            <div class="property-card-content">
+                                <div class="property-title">${property.address}</div>
+                                <div class="property-meta">
+                                    <div class="meta-item">🛏️ ${property.bedrooms} bed</div>
+                                    <div class="meta-item">🚿 ${property.bathrooms} bath</div>
+                                    <div class="meta-item">🏠 ${property.propertyType}</div>
+                                </div>
+                                <div class="property-price">${formatPrice(property.price)}</div>
                             </div>
-                            <div class="property-price">${formatPrice(property.price)}</div>
                         </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                 </div>
             </div>
         </div>
