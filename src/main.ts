@@ -590,6 +590,35 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
 
     document.getElementById('backFromAgency')?.addEventListener('click', hideAgencyDetail);
 
+    // Setup favorite buttons
+    const setupFavorites = async () => {
+        const favorites = await getFavorites();
+        document.querySelectorAll('.favorite-button').forEach(async (btn) => {
+            const propertyId = (btn as HTMLElement).dataset.favoriteId!;
+            const isFav = favorites.includes(propertyId);
+
+            if (isFav) {
+                btn.classList.add('active');
+            }
+
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const currentFavorites = await getFavorites();
+                const isCurrentlyFavorite = currentFavorites.includes(propertyId);
+
+                if (isCurrentlyFavorite) {
+                    await removeFavorite(propertyId);
+                    btn.classList.remove('active');
+                } else {
+                    await addFavorite(propertyId);
+                    btn.classList.add('active');
+                }
+            });
+        });
+    };
+
+    setupFavorites();
+
     document.querySelectorAll('.property-card').forEach(card => {
         card.addEventListener('click', () => {
             const propertyId = (card as HTMLElement).dataset.propertyId;
