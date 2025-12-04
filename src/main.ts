@@ -429,6 +429,14 @@ function showResults(results: SearchResults): void {
     resultsContainer.innerHTML = html;
     resultsContainer.classList.remove('hidden');
     (resultsContainer as HTMLElement).style.pointerEvents = 'auto';
+    (resultsContainer as HTMLElement).style.zIndex = '10000';
+    console.log('Results container rendered:', resultsContainer);
+    console.log('Results container styles:', {
+        pointerEvents: (resultsContainer as HTMLElement).style.pointerEvents,
+        zIndex: (resultsContainer as HTMLElement).style.zIndex,
+        display: getComputedStyle(resultsContainer).display,
+        visibility: getComputedStyle(resultsContainer).visibility
+    });
 
     // Remove old click handler if exists
     if (resultsClickHandler) {
@@ -437,20 +445,26 @@ function showResults(results: SearchResults): void {
 
     // Setup property card click handlers using event delegation
     resultsClickHandler = (e: Event) => {
+        console.log('=== CLICK DETECTED ===');
+        console.log('Target:', e.target);
         const target = e.target as HTMLElement;
         const propertyCard = target.closest('.property-card');
+        console.log('Property card:', propertyCard);
 
         if (propertyCard) {
+            console.log('Property card FOUND!');
             e.preventDefault();
             e.stopPropagation();
             const propertyId = (propertyCard as HTMLElement).dataset.propertyId;
+            console.log('Property ID:', propertyId);
             const property = results.properties.find(p => String(p.id) === String(propertyId));
+            console.log('Property:', property);
             if (property) {
                 showPropertyDetail(property);
             }
         }
     };
-    resultsContainer.addEventListener('click', resultsClickHandler, true);
+    resultsContainer.addEventListener('click', resultsClickHandler);
 
     // Setup filter handlers
     const applyFiltersBtn = document.getElementById('applyFilters');
