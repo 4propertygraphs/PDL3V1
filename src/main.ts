@@ -617,9 +617,15 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
             console.log('Property card FOUND in agency!');
             const propertyId = (propertyCard as HTMLElement).dataset.propertyId;
             console.log('Property ID:', propertyId);
-            const property = properties.find(p => p.id === propertyId);
+            console.log('Looking for property in list of', properties.length, 'properties');
+            console.log('Properties IDs:', properties.map(p => ({ id: p.id, type: typeof p.id })));
+            const property = properties.find(p => String(p.id) === String(propertyId));
+            console.log('Found property:', property);
             if (property) {
+                console.log('🚀 Calling showPropertyDetailWithTabs');
                 showPropertyDetailWithTabs(property, agency);
+            } else {
+                console.error('❌ Property not found with ID:', propertyId);
             }
         }
     };
