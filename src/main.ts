@@ -26,6 +26,8 @@ let currentState: AppState = 'sphere';
 let currentResults: SearchResults | null = null;
 let propertyMap: L.Map | null = null;
 let currentFilters: SearchFilters = {};
+let resultsClickHandler: ((e: Event) => void) | null = null;
+let agencyClickHandler: ((e: Event) => void) | null = null;
 
 // Initialize Three.js scene
 function init(): void {
@@ -434,16 +436,25 @@ function showResults(results: SearchResults): void {
     resultsContainer.innerHTML = html;
     resultsContainer.classList.remove('hidden');
 
-    // Setup property card click handlers
-    document.querySelectorAll('.property-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const propertyId = (card as HTMLElement).dataset.propertyId;
+    // Remove old click handler if exists
+    if (resultsClickHandler) {
+        resultsContainer.removeEventListener('click', resultsClickHandler);
+    }
+
+    // Setup property card click handlers using event delegation
+    resultsClickHandler = (e: Event) => {
+        const target = e.target as HTMLElement;
+        const propertyCard = target.closest('.property-card');
+
+        if (propertyCard) {
+            const propertyId = (propertyCard as HTMLElement).dataset.propertyId;
             const property = results.properties.find(p => String(p.id) === String(propertyId));
             if (property) {
                 showPropertyDetail(property);
             }
-        });
-    });
+        }
+    };
+    resultsContainer.addEventListener('click', resultsClickHandler);
 
     // Setup filter handlers
     const applyFiltersBtn = document.getElementById('applyFilters');
@@ -549,16 +560,25 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
 
     document.getElementById('backFromAgency')?.addEventListener('click', hideAgencyDetail);
 
-    // Setup property cards
-    document.querySelectorAll('.property-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const propertyId = (card as HTMLElement).dataset.propertyId;
+    // Remove old click handler if exists
+    if (agencyClickHandler) {
+        agencyContainer.removeEventListener('click', agencyClickHandler);
+    }
+
+    // Setup property cards using event delegation
+    agencyClickHandler = (e: Event) => {
+        const target = e.target as HTMLElement;
+        const propertyCard = target.closest('.property-card');
+
+        if (propertyCard) {
+            const propertyId = (propertyCard as HTMLElement).dataset.propertyId;
             const property = properties.find(p => p.id === propertyId);
             if (property) {
                 showPropertyDetailWithTabs(property, agency);
             }
-        });
-    });
+        }
+    };
+    agencyContainer.addEventListener('click', agencyClickHandler);
 }
 
 // Hide agency detail
