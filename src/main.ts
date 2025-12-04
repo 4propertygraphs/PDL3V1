@@ -443,18 +443,29 @@ function showResults(results: SearchResults): void {
 
     // Setup property card click handlers using event delegation
     resultsClickHandler = (e: Event) => {
+        console.log('🎯 Click event detected on results container', e.target);
         const target = e.target as HTMLElement;
         const propertyCard = target.closest('.property-card');
 
+        console.log('🎴 Closest property card:', propertyCard);
+
         if (propertyCard) {
+            console.log('✅ Property card found!');
             const propertyId = (propertyCard as HTMLElement).dataset.propertyId;
+            console.log('🆔 Property ID from dataset:', propertyId);
             const property = results.properties.find(p => String(p.id) === String(propertyId));
+            console.log('🏠 Found property:', property);
             if (property) {
                 showPropertyDetail(property);
+            } else {
+                console.error('❌ Property not found in results array');
             }
+        } else {
+            console.log('⚠️ Click was not on a property card');
         }
     };
     resultsContainer.addEventListener('click', resultsClickHandler);
+    console.log('✅ Click handler attached to results container');
 
     // Setup filter handlers
     const applyFiltersBtn = document.getElementById('applyFilters');
@@ -650,16 +661,24 @@ function initializeMap(properties: Property[]): void {
 
 // Show property detail
 function showPropertyDetail(property: Property): void {
+    console.log('🔍 showPropertyDetail called with:', property);
     const detailContainer = document.querySelector('.property-detail-container');
     const resultsContainer = document.querySelector('.results-container');
 
-    if (!detailContainer) return;
+    console.log('📦 detailContainer:', detailContainer);
+    console.log('📦 resultsContainer:', resultsContainer);
+
+    if (!detailContainer) {
+        console.error('❌ Detail container not found!');
+        return;
+    }
 
     currentState = 'property-detail';
     resultsContainer?.classList.add('hidden');
 
     renderPropertyDetail(property, detailContainer);
     detailContainer.classList.remove('hidden');
+    console.log('✅ Property detail shown');
 }
 
 // Render property detail
