@@ -1109,7 +1109,10 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
         opacity: getComputedStyle(detailContainer).opacity,
     });
 
-    document.getElementById('backToAgency')?.addEventListener('click', hidePropertyDetailWithTabs);
+    const backButton = detailContainer.querySelector('#backToAgency');
+    if (backButton) {
+        backButton.addEventListener('click', hidePropertyDetailWithTabs);
+    }
 
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.addEventListener('click', () => {
