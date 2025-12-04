@@ -50,7 +50,7 @@ export async function detectSchema(client: any): Promise<DatabaseSchema | null> 
                     bathrooms: 'house_bathrooms',
                     propertyType: 'type',
                     description: '',
-                    images: 'images',
+                    images: 'pics',
                     latitude: '',
                     longitude: '',
                     agencyId: 'agency_id',
@@ -242,8 +242,11 @@ export function transformToProperty(item: any, schema: DatabaseSchema): Property
         propertyType: (cols.propertyType && cols.propertyType !== '' ? item[cols.propertyType] : null) || item.property_type || item.type || 'Property',
         description: (cols.description && cols.description !== '' && item[cols.description]) ? item[cols.description] : (item.description || ''),
         images: (() => {
-            const rawImages = (cols.images && cols.images !== '' && item[cols.images]) ? item[cols.images] : (item.images || []);
-            console.log('📸 Raw images for property:', { rawImages, type: typeof rawImages });
+            // Try multiple possible image columns: images, pics, or fallback
+            const rawImages = (cols.images && cols.images !== '' && item[cols.images])
+                ? item[cols.images]
+                : (item.images || item.pics || []);
+            console.log('📸 Raw images for property:', { rawImages, type: typeof rawImages, hasImages: !!item.images, hasPics: !!item.pics });
             if (typeof rawImages === 'string') {
                 try {
                     const parsed = JSON.parse(rawImages);
