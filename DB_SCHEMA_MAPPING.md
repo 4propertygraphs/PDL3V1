@@ -24,8 +24,9 @@ Tabulka: agencies
 
 ### DB2: ywmryhzpojfrmrxgggoy (Daft Scraper schéma)
 
-**DŮLEŽITÉ**: DB2 používá dynamické tabulky ve formátu `agency_props_[název_společnosti]_[hash]`
+**DŮLEŽITÉ**: DB2 používá dva typy tabulek:
 
+#### 1. Dynamické tabulky: `agency_props_[název_společnosti]_[hash]`
 ```
 Příklady tabulek:
 - agency_props_charlotte_owens_feefea
@@ -46,10 +47,31 @@ Struktura sloupců (různé podle tabulky):
 - sources (jsonb) ← ['daft', 'wordpress', 'myhome']
 ```
 
+#### 2. Listings tabulky: `daft_listings`, `myhome_listings`, `wordpress_listings`
+```
+Struktura sloupců:
+- id nebo unique_key
+- title nebo name
+- address nebo address1
+- eircode
+- price
+- bedrooms nebo house_bedrooms
+- bathrooms nebo house_bathrooms
+- property_type
+- description
+- images nebo pics
+- latitude, longitude
+- agency_id, agency_name, agency_address
+- url (odkaz na původní inzerát)
+- last_updated nebo updated_at
+```
+
 **Jak to funguje:**
-- Při vyhledávání "CKP" aplikace najde všechny tabulky obsahující "ckp" v názvu
-- Např. `agency_props_casey_kennedy_*`, `agency_props_ckp_*`
-- Prohledá všechny nalezené tabulky a sloučí výsledky
+- Při vyhledávání "CKP":
+  1. **Agency props**: Najde všechny tabulky obsahující "ckp" v názvu (např. `agency_props_casey_kennedy_*`)
+  2. **Listings**: Prohledá všechny tři listings tabulky podle obsahu (title, address, eircode, description)
+- Obě hledání probíhají **paralelně** pro rychlost
+- Výsledky ze všech tabulek se sloučí do jediného seznamu
 
 ## 🔄 Jak aplikace mapuje sloupce
 
@@ -66,6 +88,9 @@ WHERE a.name ILIKE '%CKP%'
 
 **DB2:**
 ```sql
+-- PARALELNĚ běží dvě hledání:
+
+-- A) Agency Props:
 -- Krok 1: Najdi všechny agency_props_* tabulky
 -- Krok 2: Filtruj tabulky obsahující "ckp" v názvu
 -- Např.: agency_props_casey_kennedy_estates_agents_abc123
@@ -74,7 +99,12 @@ WHERE a.name ILIKE '%CKP%'
 SELECT * FROM agency_props_casey_kennedy_estates_agents_abc123 LIMIT 100
 SELECT * FROM agency_props_ckp_def456 LIMIT 100
 
--- Krok 4: Sloučit všechny výsledky
+-- B) Listings:
+SELECT * FROM daft_listings WHERE (title || address || description) ILIKE '%CKP%' LIMIT 100
+SELECT * FROM myhome_listings WHERE (title || address || description) ILIKE '%CKP%' LIMIT 100
+SELECT * FROM wordpress_listings WHERE (title || address || description) ILIKE '%CKP%' LIMIT 100
+
+-- Krok 4: Sloučit všechny výsledky z A + B
 ```
 
 ### Transformace do jednotného formátu
@@ -147,14 +177,19 @@ Když uživatel zadá "CKP":
 3. **Paralelní dotazy**
    ```
    DB1: Hledá v properties.title, agencies.name, properties.address
-   DB2: Prohledává 3 tabulky paralelně (každá max 100 záznamů)
+   DB2:
+      - Agency props: Prohledává 3 tabulky paralelně (každá max 100 záznamů)
+      - Listings: Prohledává 3 listings tabulky paralelně (daft, myhome, wordpress)
    ```
 
 4. **Sloučení výsledků**
    ```
    DB1: 3 nemovitosti (z properties + agencies)
-   DB2: 45 nemovitostí (z agency_props_* tabulek)
-   CELKEM: 48 nemovitostí
+   DB2:
+      - agency_props: 32 nemovitostí (z 3 agency_props_* tabulek)
+      - listings: 15 nemovitostí (8 z daft, 5 z myhome, 2 z wordpress)
+      - celkem: 47 nemovitostí
+   CELKEM: 50 nemovitostí
    ```
 
 ## 🛠️ Přidání dalšího schématu
