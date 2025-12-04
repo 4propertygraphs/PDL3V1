@@ -693,6 +693,9 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
         }
     };
     agencyContainer.addEventListener('click', agencyClickHandler);
+
+    // Scroll to top when showing agency detail
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // Hide agency detail
@@ -774,6 +777,9 @@ function showPropertyDetail(property: Property): void {
 
     renderPropertyDetail(property, detailContainer);
     detailContainer.classList.remove('hidden');
+
+    // Scroll to top when showing detail
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // Render property detail
@@ -1107,6 +1113,9 @@ function showPropertyDetailWithTabs(property: Property, agency: any): void {
             thumb.classList.add('active');
         });
     });
+
+    // Scroll to top when showing detail
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // Hide property detail with tabs
