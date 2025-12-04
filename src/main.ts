@@ -465,7 +465,7 @@ function showResults(results: SearchResults): void {
             }
 
             const propertyId = (card as HTMLElement).dataset.propertyId;
-            const property = results.properties.find(p => p.id === propertyId);
+            const property = results.properties.find(p => String(p.id) === String(propertyId));
             if (property) {
                 showPropertyDetail(property);
             }

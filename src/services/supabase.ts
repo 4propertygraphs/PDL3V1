@@ -135,9 +135,40 @@ export async function searchPropertiesFromDB(query: string, filters?: any): Prom
             return { query, properties: [], agencies: [], sources: { daft: 0, myhome: 0, wordpress: 0, others: 0 } };
         }
 
-        const agencies = Array.from(
-            new Map(properties.map(p => [p.agency.id, p.agency])).values()
+        // Load full agency data from database
+        const agencyIds = Array.from(new Set(properties.map(p => p.agency.name)));
+        const agenciesData = await Promise.all(
+            agencyIds.map(async (agencyName) => {
+                const agency = await getAgencyByIdOrName(agencyName);
+                if (agency) {
+                    return {
+                        id: String(agency.id),
+                        name: agency.name || agencyName,
+                        address: agency.address || '',
+                        phone: agency.phone,
+                        email: agency.email,
+                        website: agency.website,
+                        logo: agency.logo,
+                        office: agency.office
+                    };
+                }
+                return {
+                    id: String(agencyName).toLowerCase().replace(/\s+/g, '-'),
+                    name: agencyName,
+                    address: ''
+                };
+            })
         );
+
+        // Update properties with full agency data
+        for (const property of properties) {
+            const fullAgency = agenciesData.find(a => a.name === property.agency.name);
+            if (fullAgency) {
+                property.agency = fullAgency;
+            }
+        }
+
+        const agencies = agenciesData;
 
         const sources = {
             daft: 0,

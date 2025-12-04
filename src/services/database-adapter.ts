@@ -229,7 +229,17 @@ export function transformToProperty(item: any, schema: DatabaseSchema): Property
         bathrooms: Number((cols.bathrooms && cols.bathrooms !== '' ? item[cols.bathrooms] : null) || item.house_bathrooms || item.bathrooms || item.baths) || 0,
         propertyType: (cols.propertyType && cols.propertyType !== '' ? item[cols.propertyType] : null) || item.property_type || item.type || 'Property',
         description: (cols.description && cols.description !== '' && item[cols.description]) ? item[cols.description] : (item.description || ''),
-        images: (cols.images && cols.images !== '' && item[cols.images]) ? item[cols.images] : (item.images || []),
+        images: (() => {
+            const rawImages = (cols.images && cols.images !== '' && item[cols.images]) ? item[cols.images] : (item.images || []);
+            if (typeof rawImages === 'string') {
+                try {
+                    return JSON.parse(rawImages);
+                } catch {
+                    return rawImages ? [rawImages] : [];
+                }
+            }
+            return Array.isArray(rawImages) ? rawImages : [];
+        })(),
         coordinates: (cols.latitude && cols.latitude !== '' && cols.longitude && cols.longitude !== '' && item[cols.latitude] && item[cols.longitude]) ? {
             lat: Number(item[cols.latitude]),
             lng: Number(item[cols.longitude])
@@ -242,6 +252,16 @@ export function transformToProperty(item: any, schema: DatabaseSchema): Property
             name: String(agencyName),
             address: '',
         },
-        sources: (cols.sources && cols.sources !== '' && item[cols.sources]) ? item[cols.sources] : (item.sources || [])
+        sources: (() => {
+            const rawSources = (cols.sources && cols.sources !== '' && item[cols.sources]) ? item[cols.sources] : (item.sources || []);
+            if (typeof rawSources === 'string') {
+                try {
+                    return JSON.parse(rawSources);
+                } catch {
+                    return [];
+                }
+            }
+            return Array.isArray(rawSources) ? rawSources : [];
+        })()
     };
 }
