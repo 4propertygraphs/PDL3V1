@@ -139,7 +139,10 @@ button:hover .button-content svg {
 /* Results and Property Detail Containers */
 .results-container,
 .property-detail-container {
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
     margin: 2rem auto;
     background: rgba(20, 20, 30, 0.95);
     backdrop-filter: blur(20px);
@@ -148,6 +151,8 @@ button:hover .button-content svg {
     padding: 2rem;
     width: 95vw;
     max-width: 1400px;
+    max-height: 90vh;
+    overflow-y: auto;
     z-index: 1000;
     pointer-events: auto !important;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -161,11 +166,16 @@ button:hover .button-content svg {
 }
 
 .results-container.hidden,
-.property-detail-container.hidden,
+.property-detail-container.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) scale(0.95);
+}
+
 .agency-detail-container.hidden {
     opacity: 0;
     pointer-events: none;
-    transform: scale(0.95);
+    transform: translateX(-50%) scale(0.95);
 }
 
 .input-container.hidden {
@@ -1051,7 +1061,10 @@ button:hover .button-content svg {
 
 /* Agency Detail Container */
 .agency-detail-container {
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
     margin: 2rem auto;
     background: linear-gradient(135deg, rgba(20, 20, 30, 0.98), rgba(15, 15, 25, 0.95));
     backdrop-filter: blur(30px);
@@ -1060,7 +1073,9 @@ button:hover .button-content svg {
     padding: 2.5rem;
     width: 95vw;
     max-width: 1400px;
-    z-index: 20;
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 20000;
     pointer-events: auto;
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(99, 102, 241, 0.1);
     opacity: 1;
