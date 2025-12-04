@@ -277,6 +277,7 @@ function showResults(results: SearchResults): void {
     const mainAgency = isSingleAgencySearch ? results.agencies[0] : null;
 
     // Build results HTML
+    console.log('📋 Rendering results with mainAgency:', mainAgency);
     const html = `
         <div class="results-header">
             ${mainAgency ? `
@@ -377,6 +378,14 @@ function showResults(results: SearchResults): void {
                     const imageUrl = property.images && property.images.length > 0
                         ? property.images[0]
                         : 'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=400';
+
+                    console.log('🖼️ Rendering property card:', {
+                        address: property.address,
+                        hasImages: !!property.images,
+                        imagesLength: property.images?.length,
+                        firstImage: property.images?.[0],
+                        imageUrl
+                    });
 
                     return `
                     <div class="property-card" data-property-id="${property.id}">
@@ -528,6 +537,7 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
 
     inputContainer?.classList.add('hidden');
 
+    console.log('🏢 Rendering agency detail:', agency);
     const html = `
         <div class="agency-detail-content">
             <button class="back-button" id="backFromAgency">← Back to Search</button>
@@ -536,9 +546,9 @@ function showAgencyDetail(agency: any, properties: Property[]): void {
                 ${agency.logo ? `<img src="${agency.logo}" alt="${agency.name}" class="agency-logo">` : ''}
                 <div class="agency-info">
                     <h1 class="agency-name">${agency.name || ''}</h1>
-                    ${agency.office_name ? `<div class="agency-office">${agency.office_name}</div>` : ''}
+                    ${(agency.office || agency.office_name) ? `<div class="agency-office">${agency.office || agency.office_name}</div>` : ''}
                     ${agency.address ? `<div class="agency-address">${agency.address}</div>` : ''}
-                    ${agency.site ? `<a href="${agency.site}" target="_blank" class="agency-website">${agency.site}</a>` : ''}
+                    ${(agency.site || agency.website) ? `<a href="${agency.site || agency.website}" target="_blank" class="agency-website">${agency.site || agency.website}</a>` : ''}
                 </div>
             </div>
 
