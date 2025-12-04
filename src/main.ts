@@ -430,13 +430,30 @@ function showResults(results: SearchResults): void {
     resultsContainer.classList.remove('hidden');
     (resultsContainer as HTMLElement).style.pointerEvents = 'auto';
     (resultsContainer as HTMLElement).style.zIndex = '10000';
-    console.log('Results container rendered:', resultsContainer);
-    console.log('Results container styles:', {
+
+    console.log('=== RESULTS CONTAINER DEBUG ===');
+    console.log('Results container:', resultsContainer);
+    console.log('Inline styles:', {
         pointerEvents: (resultsContainer as HTMLElement).style.pointerEvents,
         zIndex: (resultsContainer as HTMLElement).style.zIndex,
-        display: getComputedStyle(resultsContainer).display,
-        visibility: getComputedStyle(resultsContainer).visibility
     });
+    console.log('Computed styles:', {
+        pointerEvents: getComputedStyle(resultsContainer).pointerEvents,
+        zIndex: getComputedStyle(resultsContainer).zIndex,
+        display: getComputedStyle(resultsContainer).display,
+        visibility: getComputedStyle(resultsContainer).visibility,
+        position: getComputedStyle(resultsContainer).position,
+    });
+    console.log('Property cards found:', resultsContainer.querySelectorAll('.property-card').length);
+
+    // Test kliknutí přímo na container
+    (resultsContainer as HTMLElement).addEventListener('mousedown', (e) => {
+        console.log('=== MOUSEDOWN ON RESULTS CONTAINER ===', e);
+    }, true);
+
+    document.body.addEventListener('click', (e) => {
+        console.log('=== BODY CLICK ===', e.target);
+    }, true);
 
     // Remove old click handler if exists
     if (resultsClickHandler) {
