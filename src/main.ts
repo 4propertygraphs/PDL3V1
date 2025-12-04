@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { AppState, SearchFilters, SearchResults, Property } from './types';
 import { calculatePropertyDeltas, formatPrice, formatDate } from './utils';
-import { searchPropertiesFromDB, getFavorites, addFavorite, removeFavorite } from './services/supabase';
+import { searchPropertiesFromDB, getFavorites, addFavorite, removeFavorite, diagnosticDatabases } from './services/supabase';
 import { analyzeSearchQuery } from './services/openai';
 import { exportToPDF, exportToExcel } from './services/export';
 import './style.css';
@@ -705,3 +705,6 @@ window.addEventListener('resize', () => {
 
 // Initialize application
 init();
+
+// Run database diagnostics on startup
+diagnosticDatabases();

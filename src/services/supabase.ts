@@ -15,8 +15,55 @@ export const supabase2 = createClient(supabaseUrl2, supabaseKey2);
 // Pro zpětnou kompatibilitu
 export const supabase = supabase1;
 
+// Diagnostika databází při startu
+export async function diagnosticDatabases() {
+    console.log('═══════════════════════════════════════');
+    console.log('🔧 DIAGNOSTIKA DATABÁZÍ');
+    console.log('═══════════════════════════════════════');
+
+    // DB1
+    const { data: agencies1, error: error1 } = await supabase1
+        .from('agencies')
+        .select('id, name')
+        .limit(10);
+
+    const { count: propertiesCount1 } = await supabase1
+        .from('properties')
+        .select('*', { count: 'exact', head: true });
+
+    console.log('DB1 (izuvblxr):');
+    console.log(`  Agencies: ${agencies1?.length || 0}`);
+    if (agencies1 && agencies1.length > 0) {
+        console.log('  Dostupné agencies:', agencies1.map(a => a.name).join(', '));
+    }
+    console.log(`  Properties: ${propertiesCount1 || 0}`);
+    if (error1) console.error('  ❌ Chyba:', error1);
+
+    // DB2
+    const { data: agencies2, error: error2 } = await supabase2
+        .from('agencies')
+        .select('id, name')
+        .limit(10);
+
+    const { count: propertiesCount2 } = await supabase2
+        .from('properties')
+        .select('*', { count: 'exact', head: true });
+
+    console.log('\nDB2 (ywmryhzp):');
+    console.log(`  Agencies: ${agencies2?.length || 0}`);
+    if (agencies2 && agencies2.length > 0) {
+        console.log('  Dostupné agencies:', agencies2.map(a => a.name).join(', '));
+    }
+    console.log(`  Properties: ${propertiesCount2 || 0}`);
+    if (error2) console.error('  ❌ Chyba:', error2);
+
+    console.log('═══════════════════════════════════════\n');
+}
+
 // Helper funkce pro vyhledávání v jedné databázi
-async function searchInDatabase(client: any, query: string, filters?: any) {
+async function searchInDatabase(client: any, query: string, filters?: any, dbName: string = 'DB') {
+    console.log(`🔍 ${dbName}: Začínám hledání pro "${query}"`);
+
     let queryBuilder = client
         .from('properties')
         .select(`
@@ -27,10 +74,18 @@ async function searchInDatabase(client: any, query: string, filters?: any) {
     // Apply search - including agency name search
     if (query) {
         // Search by agency name first
-        const { data: agenciesData } = await client
+        const { data: agenciesData, error: agencyError } = await client
             .from('agencies')
-            .select('id')
+            .select('id, name')
             .ilike('name', `%${query}%`);
+
+        console.log(`📋 ${dbName}: Našel jsem ${agenciesData?.length || 0} agencies s názvem obsahujícím "${query}"`);
+        if (agenciesData && agenciesData.length > 0) {
+            console.log(`📋 ${dbName}: Agency IDs:`, agenciesData.map((a: any) => `${a.name} (${a.id})`));
+        }
+        if (agencyError) {
+            console.error(`❌ ${dbName}: Chyba při hledání agencies:`, agencyError);
+        }
 
         // Build OR condition including agency search
         const orConditions = [
@@ -45,6 +100,7 @@ async function searchInDatabase(client: any, query: string, filters?: any) {
         }
 
         queryBuilder = queryBuilder.or(orConditions.join(','));
+        console.log(`🔍 ${dbName}: OR podmínky:`, orConditions.join(' OR '));
     }
 
     // Apply filters
@@ -57,15 +113,25 @@ async function searchInDatabase(client: any, query: string, filters?: any) {
         if (filters.location) queryBuilder = queryBuilder.ilike('address', `%${filters.location}%`);
     }
 
-    return await queryBuilder;
+    const result = await queryBuilder;
+    console.log(`✅ ${dbName}: Výsledek - našel ${result.data?.length || 0} nemovitostí`);
+    if (result.error) {
+        console.error(`❌ ${dbName}: Chyba při hledání properties:`, result.error);
+    }
+
+    return result;
 }
 
 export async function searchPropertiesFromDB(query: string, filters?: any): Promise<SearchResults> {
     try {
+        console.log('═══════════════════════════════════════');
+        console.log(`🔍 ZAČÁTEK HLEDÁNÍ: "${query}"`);
+        console.log('═══════════════════════════════════════');
+
         // Hledáme v OBOU databázích současně
         const [result1, result2] = await Promise.all([
-            searchInDatabase(supabase1, query, filters),
-            searchInDatabase(supabase2, query, filters)
+            searchInDatabase(supabase1, query, filters, 'DB1 (izuvblxr)'),
+            searchInDatabase(supabase2, query, filters, 'DB2 (ywmryhzp)')
         ]);
 
         // Sloučíme data z obou databází
@@ -75,13 +141,15 @@ export async function searchPropertiesFromDB(query: string, filters?: any): Prom
         ];
 
         // Logování pro debug
-        console.log(`🔍 Hledání: "${query}"`);
-        console.log(`📊 DB1 našla: ${result1.data?.length || 0} nemovitostí`);
-        console.log(`📊 DB2 našla: ${result2.data?.length || 0} nemovitostí`);
-        console.log(`✅ Celkem: ${allData.length} nemovitostí`);
+        console.log('───────────────────────────────────────');
+        console.log(`📊 VÝSLEDKY HLEDÁNÍ:`);
+        console.log(`   DB1 (izuvblxr): ${result1.data?.length || 0} nemovitostí`);
+        console.log(`   DB2 (ywmryhzp): ${result2.data?.length || 0} nemovitostí`);
+        console.log(`   ✅ CELKEM: ${allData.length} nemovitostí`);
+        console.log('═══════════════════════════════════════');
 
-        if (result1.error) console.error('DB1 chyba:', result1.error);
-        if (result2.error) console.error('DB2 chyba:', result2.error);
+        if (result1.error) console.error('❌ DB1 chyba:', result1.error);
+        if (result2.error) console.error('❌ DB2 chyba:', result2.error);
 
         if (allData.length === 0) {
             return { query, properties: [], agencies: [], sources: { daft: 0, myhome: 0, wordpress: 0, others: 0 } };
